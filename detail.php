@@ -879,7 +879,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                 <div class="scorecard-title">Informasi Skor</div>
 
                 <!-- Dynamic player sections will be generated here -->
-                <div id="playersContainer">
+                <div id="playersContainer"> 
                     <!-- Player sections akan dimuat di sini oleh JavaScript -->
                 </div>
 
@@ -1007,142 +1007,218 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
             }
 
             function generatePlayerSections(jumlahSesi, jumlahPanah) {
-                const playersContainer = document.getElementById('playersContainer');
-                playersContainer.innerHTML = '';
+    const playersContainer = document.getElementById('playersContainer');
+    playersContainer.innerHTML = '';
 
-                // Generate section untuk setiap peserta
-                pesertaData.forEach((peserta, index) => {
-                    const playerId = `peserta_${peserta.id}`;
-                    const playerName = peserta.nama_peserta;
-                    
-                    const playerSection = document.createElement('div');
-                    playerSection.className = 'player-section';
-                    playerSection.innerHTML = `
-                        <div class="player-header">
-                            ${playerName} (${peserta.jenis_kelamin}) <?= isset($_GET['rangking']) ? 'Juara ${index + 1}'  : ''  ?>
-                        </div>
-                        <div class="sessions-container" id="${playerId}_sessions">
-                            ${generateSessionCards(playerId, jumlahSesi, jumlahPanah)}
-                        </div>
-                        <div class="total-summary" id="${playerId}_summary">
-                            <div style="font-size: 14px; margin-bottom: 8px;">Total Keseluruhan</div>
-                            <div class="grand-total" id="${playerId}_grand_total">0 poin</div>
-                        </div>
-                    `;
-                    
-                    playersContainer.appendChild(playerSection);
-                });
+    // Generate section untuk setiap peserta
+    pesertaData.forEach((peserta, index) => {
+        const playerId = `peserta_${peserta.id}`;
+        const playerName = peserta.nama_peserta;
+        
+        const playerSection = document.createElement('div');
+        playerSection.className = 'player-section';
+        playerSection.innerHTML = `
+            <div class="player-header">
+                ${playerName} (${peserta.jenis_kelamin}) ${typeof peserta.total_score !== 'undefined' ? ` - Juara ${index + 1}` : ''}
+            </div>
+            <div class="score-table-container">
+                <table class="score-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 60px;">Sesi</th>
+                            <th colspan="${jumlahPanah}">Anak Panah</th>
+                            <th rowspan="2" style="width: 60px;">Total</th>
+                            <th rowspan="2" style="width: 60px;">End</th>
+                        </tr>
+                        <tr>
+                            ${Array.from({length: jumlahPanah}, (_, i) => `<th style="width: 50px;">${i + 1}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${generateTableRows(playerId, jumlahSesi, jumlahPanah)}
+                    </tbody>
+                </table>
+            </div>
+            <div class="total-summary" id="${playerId}_summary">
+                <div style="font-size: 14px; margin-bottom: 8px;">Total Keseluruhan</div>
+                <div class="grand-total" id="${playerId}_grand_total">0 poin</div>
+                ${typeof peserta.x_score !== 'undefined' ? `<div class="x-count">X Score: ${peserta.x_score}</div>` : ''}
+            </div>
+        `;
+        
+        playersContainer.appendChild(playerSection);
+    });
+}
+
+function generateTableRows(playerId, jumlahSesi, jumlahPanah) {
+    let rowsHtml = '';
+    
+    // Generate rows untuk setiap sesi
+    for (let session = 1; session <= jumlahSesi; session++) {
+        const arrowInputs = Array.from({length: jumlahPanah}, (_, arrow) => `
+            <td>
+                <input type="text" 
+                       class="arrow-input" 
+                       <?= (isset($_GET['rangking'])) ? 'disabled' : '' ?>
+                       id="${playerId}_a${arrow + 1}_s${session}"
+                       placeholder=""
+                       oninput="validateArrowInput(this);hitungPerArrow('${playerId}', '${arrow + 1}', '${session}','${jumlahPanah}', this)">
+            </td>
+        `).join('');
+        
+        rowsHtml += `
+            <tr class="session-row">
+                <td class="session-label">S${session}</td>
+                ${arrowInputs}
+                <td class="total-cell">
+                    <input type="text" 
+                           class="arrow-input" 
+                           id="${playerId}_total_a${session}"
+                           readonly
+                           style="background: rgba(253, 203, 110, 0.1); border-color: #e17055;">
+                </td>
+                <td class="end-cell">
+                    <input type="text" 
+                           class="arrow-input" 
+                           id="${playerId}_end_a${session}"
+                           readonly
+                           style="background: rgba(0, 184, 148, 0.1); border-color: #00b894;">
+                </td>
+            </tr>
+        `;
+    }
+    
+    return rowsHtml;
+}
+
+// Update function hitungPerArrow untuk bekerja dengan table structure yang benar
+function hitungPerArrow(playerId, arrow, session, totalArrow, el) {
+    // Hitung total untuk sesi ini
+    let sessionTotal = 0;
+    
+    // Loop melalui semua arrow dalam sesi ini
+    for(let a = 1; a <= totalArrow; a++) {
+        const input = document.getElementById(`${playerId}_a${a}_s${session}`);
+        if(input && input.value) {
+            let val = input.value.trim().toLowerCase();
+            let score = 0;
+            if (val === "x") {
+                score = 10;
+            } else if (val === "m") {
+                score = 0;
+            } else if (!isNaN(val) && val !== "") {
+                score = parseInt(val);
             }
-
-            function validateArrowInput(el) {
-                let val = el.value.trim().toLowerCase();
-
-                // hanya boleh angka 0–10, huruf x, atau m
-                if (!/^(10|[0-9]|x|m)?$/i.test(val)) {
-                    el.value = ""; // reset kalau tidak valid
-                }
+            sessionTotal += score;
+        }
+    }
+    
+    // Update total untuk sesi ini
+    const totalInput = document.getElementById(`${playerId}_total_a${session}`);
+    if(totalInput) {
+        totalInput.value = sessionTotal;
+    }
+    
+    // Hitung dan update End (running total) untuk semua sesi yang ada
+    let maxSession = 20; // Asumsi maksimal 20 sesi
+    let runningTotal = 0;
+    
+    for(let s = 1; s <= maxSession; s++) {
+        const sessionTotalInput = document.getElementById(`${playerId}_total_a${s}`);
+        const sessionEndInput = document.getElementById(`${playerId}_end_a${s}`);
+        
+        if(sessionTotalInput && sessionEndInput) {
+            // Tambahkan total sesi ini ke running total
+            if(sessionTotalInput.value && sessionTotalInput.value !== '') {
+                runningTotal += parseInt(sessionTotalInput.value) || 0;
             }
+            // Update End value
+            sessionEndInput.value = runningTotal;
+        } else {
+            // Tidak ada sesi selanjutnya, keluar dari loop
+            break;
+        }
+    }
+    
+    // Update grand total dengan running total terakhir
+    const grandTotalElement = document.getElementById(`${playerId}_grand_total`);
+    if(grandTotalElement) {
+        grandTotalElement.innerText = runningTotal + " poin";
+    }
+    
+    // Save to database if element provided
+    if(el != null) {
+        let arr_playerID = playerId.split("_");
+        let nama = "Marsha and The Bear";
+        
+        fetch("", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: "save_score=1" +
+                "&nama=" + encodeURIComponent(nama) +
+                "&peserta_id=" + encodeURIComponent(arr_playerID[1]) +
+                "&arrow=" + encodeURIComponent(arrow) +
+                "&session=" + encodeURIComponent(session) + 
+                "&score=" + encodeURIComponent(document.getElementById(el.id).value)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Score saved: " + data.message);
+        })
+        .catch(err => console.error(err));
+    }
+    
+    return 0;
+}
 
+function validateArrowInput(el) {
+    let val = el.value.trim().toLowerCase();
 
-            function hitungPerArrow(playerId, arrow, session, totalArrow, el) {
-                // Ambil semua input dengan id mulai dari playerId
-                let inputs = document.querySelectorAll(`.arrow-input[id^="${playerId}_a${arrow}_s"]`);
-                let ini_session = session;
-                // console.log(playerId);
+    // hanya boleh angka 0–10, huruf x, atau m
+    if (!/^(10|[0-9]|x|m)?$/i.test(val)) {
+        el.value = ""; // reset kalau tidak valid
+        return;
+    }
+    
+    // Apply visual styling based on value
+    if (val === 'x' || val === 'X') {
+        el.style.background = 'rgba(40, 167, 69, 0.1)';
+        el.style.borderColor = '#28a745';
+        el.style.color = '#28a745';
+        el.style.fontWeight = '700';
+    } else if (val === 'm' || val === 'M') {
+        el.style.background = 'rgba(220, 53, 69, 0.1)';
+        el.style.borderColor = '#dc3545';
+        el.style.color = '#dc3545';
+        el.style.fontWeight = '700';
+    } else if (val === '10') {
+        el.style.background = 'rgba(40, 167, 69, 0.1)';
+        el.style.borderColor = '#28a745';
+        el.style.color = '#28a745';
+        el.style.fontWeight = '700';
+    } else if (val === '9' || val === '8') {
+        el.style.background = 'rgba(255, 193, 7, 0.1)';
+        el.style.borderColor = '#ffc107';
+        el.style.color = '#856404';
+        el.style.fontWeight = '600';
+    } else {
+        // Reset styling for other values
+        el.style.background = 'transparent';
+        el.style.borderColor = 'transparent';
+        el.style.color = '#333';
+        el.style.fontWeight = '600';
+    }
+}
 
-                let hasil = {}; 
-
-                let total = 0;
-
-                inputs.forEach(input => {
-                    let id = input.id; 
-
-                    let val = input.value.trim().toLowerCase();
-
-                    // // Konversi nilai ke angka
-                    let score = 0;
-                    if (val === "x") {
-                        score = 10;
-                    } else if (val === "m") {
-                        score = 0;
-                    } else if (!isNaN(val) && val !== "") {
-                        score = parseInt(val);
-                    }
-
-                    total += score;
-                });
-
-                // console.log("Total per session:", total);
-                document.getElementById(`${playerId}_total_a${arrow}`).value = total;
-                // document.getElementById(`${playerId}_end_a${arrow}`).value = total;
-                // Total Terakhir
-                let endTotal = 0;
-                
-                for(let arrow_i = 1; arrow_i <= totalArrow; arrow_i++) {
-                    let EndTotal = 0;
-                    for(let arrow_u = 1; arrow_u <= arrow_i; arrow_u++) {
-                        EndTotal += parseInt(document.getElementById(`${playerId}_total_a${arrow_u}`).value);
-                    }
-
-                    console.log(EndTotal);
-                    if(isNaN(EndTotal)) {
-                        document.getElementById(`${playerId}_end_a${arrow_i}`).value = 0;
-                    } else {
-                        document.getElementById(`${playerId}_end_a${arrow_i}`).value = EndTotal;
-                    }
-                }
-
-                // console.log(total);
-                // if(document.getElementById(`${playerId}_end_a${arrow-1}`) == null) {
-                //     document.getElementById(`${playerId}_end_a${arrow}`).value = total;
-                // } else {
-                //     document.getElementById(`${playerId}_end_a${arrow}`).value = total + parseInt(document.getElementById(`${playerId}_end_a${arrow-1}`).value);
-                //     // breal
-                // }
-
-
-                // Total Keseluruhan
-                let total_keselurahan = 0;
-                for(let arrow_y = 0; arrow_y < totalArrow; arrow_y++) {
-                    if(document.getElementById(`${playerId}_total_a${arrow_y + 1}`).value == "") {
-                        total_keselurahan += 0;  
-                    } else {
-                        total_keselurahan += parseInt(document.getElementById(`${playerId}_total_a${arrow_y + 1}`).value);
-                    }
-                }
-
-                let arr_playerID = playerId.split("_");
-  
-                document.getElementById(`${playerId}_grand_total`).innerText = total_keselurahan + " poin";
-
-                if(el != null) {
-                    // console.log(el.id);
-                    let nama = "Marsha and The Bear";
-                    
-
-                    fetch("", { // kosong artinya request ke file ini sendiri
-                        method: "POST",
-                        headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                        },
-                        body: "save_score=1" +
-                            "&nama=" + encodeURIComponent(nama) +
-                            "&peserta_id=" + encodeURIComponent(arr_playerID[1]) +
-                            "&arrow=" + encodeURIComponent(arrow) +
-                            "&session=" + encodeURIComponent(ini_session) + 
-                            "&score=" + encodeURIComponent(document.getElementById(el.id).value)
-
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Halo, " + data.message);
-                    })
-                    .catch(err => console.error(err));   
-                    // console.log("-");
-                }
-
-                return 0;
-            }
+function editScorecard() {
+    document.getElementById('setupForm').style.display = 'block';
+    document.getElementById('scorecardContainer').style.display = 'none';
+    
+    // Reset container width
+    document.querySelector('.container').style.maxWidth = '500px';
+}
 
 
 
