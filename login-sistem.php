@@ -15,7 +15,7 @@ if (isset($_POST['submit'])) {
     if ($name === '' || $password === '') {
         $error_message = 'Harap isi nama dan password';
     } else {
-        $conn = new mysqli('localhost', 'root', '', 'panahan_turnament_new');
+        // $conn = new mysqli('localhost', 'root', '', 'panahan_turnament_new');
         
         if ($conn->connect_error) {
             $error_message = 'Koneksi database gagal: ' . $conn->connect_error;
