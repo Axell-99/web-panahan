@@ -1,6 +1,8 @@
 <?php
 // Include konfigurasi database
 include "panggil.php";
+include 'check_access.php';
+requireAdmin();
 
 // Proses form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {

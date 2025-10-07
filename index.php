@@ -1,6 +1,58 @@
 <?php
-// PINDAHKAN include ke paling atas, SEBELUM HTML
-include 'login-sistem.php';
+include 'panggil.php';
+
+// Cek jika sudah login
+if (isset($_SESSION['login']) && $_SESSION['login'] === true) {
+    if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+        header('Location: dashboard.php');
+    } else {
+        header('Location: kegiatan.view.php');
+    }
+    exit;
+}
+
+$error_message = '';
+
+if (isset($_POST['submit'])) {
+    $name = trim($_POST['name']);
+    $password = trim($_POST['password']);
+
+    if (empty($name) || empty($password)) {
+        $error_message = 'Harap isi nama dan password';
+    } else {
+        $sql = "SELECT * FROM users WHERE name = ?";
+        $stmt = $conn->prepare($sql);
+        
+        if ($stmt) {
+            $stmt->bind_param("s", $name);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+            
+            if ($user && password_verify($password, $user['password'])) {
+                // Set session dengan benar
+                $_SESSION['login'] = true;
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['name'];
+                $_SESSION['role'] = $user['role'] ?? 'user';
+                
+                // PENTING: Regenerate session ID untuk keamanan
+                session_regenerate_id(true);
+                
+                // Redirect berdasarkan role
+                if ($_SESSION['role'] === 'admin') {
+                    header('Location: dashboard.php');
+                } else {
+                    header('Location: kegiatan.view.php');
+                }
+                exit;
+            } else {
+                $error_message = 'Login gagal! Username atau password salah.';
+            }
+            $stmt->close();
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -317,17 +369,12 @@ include 'login-sistem.php';
                     </div>
                 <?php endif; ?>
 
-                <?php 
-                // PERBAIKAN: Pastikan variable error_message terdefinisi
-                $error_message = $error_message ?? '';
-                if (!empty($error_message)): 
-                ?>
+                <?php if (!empty($error_message)): ?>
                     <div class="alert alert-error">
                         <?php echo htmlspecialchars($error_message); ?>
                     </div>
                 <?php endif; ?>
 
-                <!-- PERBAIKAN: Ganti field dari username ke name -->
                 <div class="form-group">
                     <label for="name">Nama</label>
                     <input 
@@ -361,9 +408,7 @@ include 'login-sistem.php';
             </form>
 
             <div class="forgot-password">
-                <a href="#" onclick="alert('Hubungi administrator untuk reset password')">
-                    Lupa Password?
-                </a>
+                <a href="debug_session.php">Cek Session (Debug)</a>
             </div>
         </div>
     </div>
@@ -388,7 +433,6 @@ include 'login-sistem.php';
             document.getElementById('name').focus();
         });
 
-        // PERBAIKAN: Update reference dari username ke name
         // Enter key navigation
         document.getElementById('name').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {

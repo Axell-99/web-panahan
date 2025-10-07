@@ -1,5 +1,7 @@
 <?php
 include 'panggil.php';
+include 'check_access.php';
+requireAdmin();
 
 // Handle export to Excel
 if (isset($_GET['export']) && $_GET['export'] == 'excel') {

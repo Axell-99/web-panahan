@@ -1,5 +1,7 @@
 <?php
 include 'panggil.php';
+include 'check_access.php';
+requireLogin();
 
 // Ambil semua kategori
 $kategoriResult = $conn->query("SELECT id, name, min_age, max_age FROM categories ORDER BY min_age ASC");

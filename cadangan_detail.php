@@ -1,813 +1,23 @@
 <?php
 // Aktifkan error reporting untuk debugging
-
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-include 'check_access.php';
-requireLogin();
 
 // Mulai session jika belum
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// ============================================
-// HANDLER UNTUK BRACKET TOURNAMENT (ADUAN)
-// ============================================
-if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
-    try {
-        include 'panggil.php';
-    } catch (Exception $e) {
-        die("Error koneksi database: " . $e->getMessage());
-    }
-
-    $kegiatan_id = isset($_GET['kegiatan_id']) ? intval($_GET['kegiatan_id']) : null;
-    $category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : null;
-    $scoreboard_id = isset($_GET['scoreboard']) ? intval($_GET['scoreboard']) : null;
-
-    if (!$kegiatan_id || !$category_id || !$scoreboard_id) {
-        die("Parameter tidak lengkap.");
-    }
-
-    // Ambil data kegiatan
-    $kegiatanData = [];
-    try {
-        $queryKegiatan = "SELECT id, nama_kegiatan FROM kegiatan WHERE id = ?";
-        $stmtKegiatan = $conn->prepare($queryKegiatan);
-        $stmtKegiatan->bind_param("i", $kegiatan_id);
-        $stmtKegiatan->execute();
-        $resultKegiatan = $stmtKegiatan->get_result();
-        
-        if ($resultKegiatan->num_rows > 0) {
-            $kegiatanData = $resultKegiatan->fetch_assoc();
-        }
-        $stmtKegiatan->close();
-    } catch (Exception $e) {
-        die("Error mengambil data kegiatan: " . $e->getMessage());
-    }
-
-    // Ambil data kategori
-    $kategoriData = [];
-    try {
-        $queryKategori = "SELECT id, name FROM categories WHERE id = ?";
-        $stmtKategori = $conn->prepare($queryKategori);
-        $stmtKategori->bind_param("i", $category_id);
-        $stmtKategori->execute();
-        $resultKategori = $stmtKategori->get_result();
-        
-        if ($resultKategori->num_rows > 0) {
-            $kategoriData = $resultKategori->fetch_assoc();
-        }
-        $stmtKategori->close();
-    } catch (Exception $e) {
-        die("Error mengambil data kategori: " . $e->getMessage());
-    }
-
-    // Ambil data peserta berdasarkan ranking
-    $pesertaList = [];
-    try {
-        $queryPeserta = "
-            SELECT 
-                p.id,
-                p.nama_peserta,
-                p.jenis_kelamin
-            FROM peserta p
-            WHERE p.kegiatan_id = ? AND p.category_id = ?
-            ORDER BY p.nama_peserta ASC
-        ";
-        $stmtPeserta = $conn->prepare($queryPeserta);
-        $stmtPeserta->bind_param("ii", $kegiatan_id, $category_id);
-        $stmtPeserta->execute();
-        $resultPeserta = $stmtPeserta->get_result();
-        
-        while ($row = $resultPeserta->fetch_assoc()) {
-            // Hitung total score untuk setiap peserta
-            $queryScore = "SELECT score FROM score WHERE kegiatan_id = ? AND category_id = ? AND score_board_id = ? AND peserta_id = ?";
-            $stmtScore = $conn->prepare($queryScore);
-            $stmtScore->bind_param("iiii", $kegiatan_id, $category_id, $scoreboard_id, $row['id']);
-            $stmtScore->execute();
-            $resultScore = $stmtScore->get_result();
-            
-            $total_score = 0;
-            $total_x = 0;
-            while ($scoreRow = $resultScore->fetch_assoc()) {
-                $scoreValue = strtolower($scoreRow['score']);
-                if ($scoreValue == 'x') {
-                    $total_score += 10;
-                    $total_x++;
-                } else if ($scoreValue != 'm') {
-                    $total_score += intval($scoreValue);
-                }
-            }
-            
-            $row['total_score'] = $total_score;
-            $row['total_x'] = $total_x;
-            $pesertaList[] = $row;
-            $stmtScore->close();
-        }
-        
-        // Sort berdasarkan score tertinggi
-        usort($pesertaList, function($a, $b) {
-            if ($b['total_score'] != $a['total_score']) {
-                return $b['total_score'] - $a['total_score'];
-            }
-            return $b['total_x'] - $a['total_x'];
-        });
-        
-        $stmtPeserta->close();
-    } catch (Exception $e) {
-        die("Error mengambil data peserta: " . $e->getMessage());
-    }
-
-    $conn->close();
-    ?>
-    <!DOCTYPE html>
-    <html lang="id">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Tournament Bracket - <?= htmlspecialchars($kategoriData['name']) ?></title>
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-
-            body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background: linear-gradient(135deg, #2d3436 0%, #000000 100%);
-                min-height: 100vh;
-                padding: 20px;
-                color: white;
-            }
-
-            .container {
-                max-width: 1600px;
-                margin: 0 auto;
-            }
-
-            .header {
-                text-align: center;
-                margin-bottom: 30px;
-                background: rgba(255, 255, 255, 0.05);
-                padding: 20px;
-                border-radius: 15px;
-            }
-
-            .back-btn {
-                background: rgba(255, 255, 255, 0.1);
-                border: none;
-                color: white;
-                padding: 10px 20px;
-                border-radius: 8px;
-                cursor: pointer;
-                margin-bottom: 20px;
-                text-decoration: none;
-                display: inline-block;
-            }
-
-            .back-btn:hover {
-                background: rgba(255, 255, 255, 0.2);
-            }
-
-            .setup-container {
-                background: rgba(255, 255, 255, 0.05);
-                border-radius: 15px;
-                padding: 40px;
-                text-align: center;
-                max-width: 600px;
-                margin: 0 auto;
-            }
-
-            .setup-container h2 {
-                margin-bottom: 30px;
-                font-size: 28px;
-            }
-
-            .bracket-size-options {
-                display: flex;
-                gap: 20px;
-                justify-content: center;
-                margin-bottom: 30px;
-            }
-
-            .size-option {
-                background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
-                border: none;
-                color: white;
-                padding: 20px 40px;
-                border-radius: 12px;
-                font-size: 24px;
-                font-weight: 700;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-
-            .size-option:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 10px 30px rgba(253, 203, 110, 0.4);
-            }
-
-            .size-option.active {
-                background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
-            }
-
-            .generate-btn {
-                background: linear-gradient(135deg, #0984e3 0%, #6c5ce7 100%);
-                border: none;
-                color: white;
-                padding: 15px 50px;
-                border-radius: 12px;
-                font-size: 18px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-
-            .generate-btn:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 8px 25px rgba(9, 132, 227, 0.4);
-            }
-
-            .generate-btn:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-            }
-
-            .bracket-container {
-                display: none;
-                margin-top: 30px;
-                overflow-x: auto;
-                padding: 20px;
-            }
-
-            .bracket {
-                display: flex;
-                justify-content: space-around;
-                gap: 40px;
-                min-width: 1400px;
-            }
-
-            .round {
-                display: flex;
-                flex-direction: column;
-                justify-content: space-around;
-                min-height: 800px;
-            }
-
-            .round-title {
-                text-align: center;
-                font-size: 20px;
-                font-weight: 700;
-                margin-bottom: 20px;
-                color: #fdcb6e;
-            }
-
-            .match {
-                display: flex;
-                flex-direction: column;
-                gap: 5px;
-                margin: 10px 0;
-            }
-
-            .player {
-                background: linear-gradient(135deg, #ffa502 0%, #ff6348 100%);
-                padding: 12px 20px;
-                border-radius: 8px;
-                min-width: 200px;
-                font-weight: 600;
-                position: relative;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                border: 3px solid transparent;
-            }
-
-            .player:hover {
-                transform: translateX(5px);
-                box-shadow: 0 5px 15px rgba(255, 165, 2, 0.4);
-            }
-
-            .player.winner {
-                border-color: #00b894;
-                box-shadow: 0 0 20px rgba(0, 184, 148, 0.5);
-            }
-
-            .player.empty {
-                background: rgba(255, 255, 255, 0.1);
-                color: #666;
-                cursor: default;
-            }
-
-            .player.empty:hover {
-                transform: none;
-                box-shadow: none;
-            }
-
-            .final-winner {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-            }
-
-            .trophy {
-                font-size: 80px;
-                margin: 20px 0;
-            }
-
-            .winner-name {
-                background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-                padding: 20px 40px;
-                border-radius: 12px;
-                font-size: 24px;
-                font-weight: 700;
-                color: #2d3436;
-                box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4);
-            }
-
-            .info-text {
-                color: #ddd;
-                margin-top: 20px;
-                font-size: 14px;
-            }
-
-            @media (max-width: 768px) {
-                .bracket {
-                    min-width: 1000px;
-                }
-
-                .player {
-                    min-width: 150px;
-                    padding: 10px 15px;
-                    font-size: 13px;
-                }
-
-                .round {
-                    min-height: 600px;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <a href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>" class="back-btn">← Kembali</a>
-
-            <div class="header">
-                <h1>Tournament Bracket</h1>
-                <h3><?= htmlspecialchars($kategoriData['name']) ?></h3>
-                <p><?= htmlspecialchars($kegiatanData['nama_kegiatan']) ?></p>
-                <p style="margin-top: 10px; color: #74b9ff;">Total Peserta: <?= count($pesertaList) ?> orang</p>
-            </div>
-
-            <div class="setup-container" id="setupContainer">
-                <h2>Pilih Jumlah Peserta Bracket</h2>
-                
-                <div class="bracket-size-options">
-                    <button class="size-option" onclick="selectBracketSize(16)" id="size16">16</button>
-                    <button class="size-option" onclick="selectBracketSize(32)" id="size32">32</button>
-                </div>
-
-                <p class="info-text">
-                    Pilih jumlah peserta untuk sistem bracket tournament
-                </p>
-
-                <button class="generate-btn" id="startBracketBtn" onclick="startBracket()" disabled style="margin-top: 30px;">
-                    🏆 Masuk ke Bracket
-                </button>
-            </div>
-
-            <div class="bracket-container" id="bracketContainer">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <button class="generate-btn" id="generateBtn" onclick="generateBracket()">
-                        🎲 Generate & Acak Bracket
-                    </button>
-                    <button class="generate-btn" onclick="backToSetup()" style="background: linear-gradient(135deg, #636e72 0%, #2d3436 100%); margin-left: 10px;">
-                        ← Kembali ke Setup
-                    </button>
-                    <p class="info-text" style="margin-top: 15px;">
-                        Klik tombol "Generate & Acak Bracket" untuk mengacak posisi peserta secara random
-                    </p>
-                </div>
-                <div id="bracketContent">
-                    <!-- Bracket akan di-generate di sini -->
-                </div>
-            </div>
-        </div>
-
-        <script>
-            const pesertaData = <?= json_encode($pesertaList) ?>;
-            let selectedSize = 0;
-            let shuffledPeserta = [];
-            let bracketData = {}; // Menyimpan data bracket
-
-            function selectBracketSize(size) {
-                selectedSize = size;
-                
-                // Update UI button selection
-                document.querySelectorAll('.size-option').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                document.getElementById('size' + size).classList.add('active');
-                
-                // Enable tombol masuk bracket
-                document.getElementById('startBracketBtn').disabled = false;
-            }
-
-            function startBracket() {
-                if (selectedSize === 0) {
-                    alert('Pilih jumlah peserta terlebih dahulu!');
-                    return;
-                }
-
-                if (pesertaData.length < 2) {
-                    alert('Minimal 2 peserta diperlukan untuk membuat bracket!');
-                    return;
-                }
-
-                // Hide setup, show bracket
-                document.getElementById('setupContainer').style.display = 'none';
-                document.getElementById('bracketContainer').style.display = 'block';
-
-                // Tampilkan placeholder bracket
-                showPlaceholderBracket();
-            }
-
-            function backToSetup() {
-                if (confirm('Kembali ke setup akan mereset semua data bracket. Lanjutkan?')) {
-                    document.getElementById('setupContainer').style.display = 'block';
-                    document.getElementById('bracketContainer').style.display = 'none';
-                    
-                    // Reset bracket content dan data
-                    document.getElementById('bracketContent').innerHTML = '';
-                    bracketData = {};
-                    shuffledPeserta = [];
-                }
-            }
-
-            function showPlaceholderBracket() {
-                if (selectedSize === 16) {
-                    showPlaceholder16Bracket();
-                } else {
-                    showPlaceholder32Bracket();
-                }
-            }
-
-            function showPlaceholder16Bracket() {
-                const bracketHTML = `
-                    <div class="bracket">
-                        <div class="round">
-                            <div class="round-title">Round of 16</div>
-                            ${generatePlaceholderMatches(8)}
-                        </div>
-                        <div class="round">
-                            <div class="round-title">Quarter Finals</div>
-                            ${generatePlaceholderMatches(4)}
-                        </div>
-                        <div class="round">
-                            <div class="round-title">Semi Finals</div>
-                            ${generatePlaceholderMatches(2)}
-                        </div>
-                        <div class="round final-winner">
-                            <div class="round-title">Finals</div>
-                            <div class="trophy">🏆</div>
-                            <div class="match">
-                                <div class="player empty">Finalist 1</div>
-                                <div class="player empty">Finalist 2</div>
-                            </div>
-                            <div class="winner-name" id="champion" style="margin-top: 30px; display: none;">Champion</div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('bracketContent').innerHTML = bracketHTML;
-            }
-
-            function showPlaceholder32Bracket() {
-                const bracketHTML = `
-                    <div class="bracket">
-                        <div class="round">
-                            <div class="round-title">Round of 32</div>
-                            ${generatePlaceholderMatches(16)}
-                        </div>
-                        <div class="round">
-                            <div class="round-title">Round of 16</div>
-                            ${generatePlaceholderMatches(8)}
-                        </div>
-                        <div class="round">
-                            <div class="round-title">Quarter Finals</div>
-                            ${generatePlaceholderMatches(4)}
-                        </div>
-                        <div class="round">
-                            <div class="round-title">Semi Finals</div>
-                            ${generatePlaceholderMatches(2)}
-                        </div>
-                        <div class="round final-winner">
-                            <div class="round-title">Finals</div>
-                            <div class="trophy">🏆</div>
-                            <div class="match">
-                                <div class="player empty">Finalist 1</div>
-                                <div class="player empty">Finalist 2</div>
-                            </div>
-                            <div class="winner-name" id="champion" style="margin-top: 30px; display: none;">Champion</div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('bracketContent').innerHTML = bracketHTML;
-            }
-
-            function generatePlaceholderMatches(numMatches) {
-                let html = '';
-                for (let i = 0; i < numMatches; i++) {
-                    html += `
-                        <div class="match">
-                            <div class="player empty">TBD</div>
-                            <div class="player empty">TBD</div>
-                        </div>
-                    `;
-                }
-                return html;
-            }
-
-            function shuffleArray(array) {
-                const newArray = [...array];
-                for (let i = newArray.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-                }
-                return newArray;
-            }
-
-            function generateBracket() {
-                if (selectedSize === 0) {
-                    alert('Pilih jumlah peserta terlebih dahulu!');
-                    return;
-                }
-
-                if (pesertaData.length < 2) {
-                    alert('Minimal 2 peserta diperlukan untuk membuat bracket!');
-                    return;
-                }
-
-                // Shuffle dan ambil peserta sesuai size
-                shuffledPeserta = shuffleArray(pesertaData).slice(0, selectedSize);
-
-                // Tambahkan BYE jika kurang
-                while (shuffledPeserta.length < selectedSize) {
-                    shuffledPeserta.push({ id: null, nama_peserta: 'BYE', empty: true });
-                }
-
-                // Initialize bracket data
-                bracketData = {};
-                shuffledPeserta.forEach((player, index) => {
-                    bracketData[index] = {
-                        player: player,
-                        round: 1,
-                        position: index
-                    };
-                });
-
-                if (selectedSize === 16) {
-                    generate16Bracket();
-                } else {
-                    generate32Bracket();
-                }
-            }
-
-            function generate16Bracket() {
-                const bracketHTML = `
-                    <div class="bracket">
-                        <div class="round">
-                            <div class="round-title">Round of 16</div>
-                            ${generateMatches(0, 16, 1, 'r16')}
-                        </div>
-                        <div class="round">
-                            <div class="round-title">Quarter Finals</div>
-                            ${generateEmptyMatches(4, 2, 'qf')}
-                        </div>
-                        <div class="round">
-                            <div class="round-title">Semi Finals</div>
-                            ${generateEmptyMatches(2, 3, 'sf')}
-                        </div>
-                        <div class="round final-winner">
-                            <div class="round-title">Finals</div>
-                            <div class="trophy">🏆</div>
-                            <div class="match" data-match="final">
-                                <div class="player empty" data-slot="final-1">Finalist 1</div>
-                                <div class="player empty" data-slot="final-2">Finalist 2</div>
-                            </div>
-                            <div class="winner-name" id="champion" style="margin-top: 30px; display: none;">Champion</div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('bracketContent').innerHTML = bracketHTML;
-            }
-
-            function generate32Bracket() {
-                const bracketHTML = `
-                    <div class="bracket">
-                        <div class="round">
-                            <div class="round-title">Round of 32</div>
-                            ${generateMatches(0, 32, 1, 'r32')}
-                        </div>
-                        <div class="round">
-                            <div class="round-title">Round of 16</div>
-                            ${generateEmptyMatches(8, 2, 'r16')}
-                        </div>
-                        <div class="round">
-                            <div class="round-title">Quarter Finals</div>
-                            ${generateEmptyMatches(4, 3, 'qf')}
-                        </div>
-                        <div class="round">
-                            <div class="round-title">Semi Finals</div>
-                            ${generateEmptyMatches(2, 4, 'sf')}
-                        </div>
-                        <div class="round final-winner">
-                            <div class="round-title">Finals</div>
-                            <div class="trophy">🏆</div>
-                            <div class="match" data-match="final">
-                                <div class="player empty" data-slot="final-1">Finalist 1</div>
-                                <div class="player empty" data-slot="final-2">Finalist 2</div>
-                            </div>
-                            <div class="winner-name" id="champion" style="margin-top: 30px; display: none;">Champion</div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('bracketContent').innerHTML = bracketHTML;
-            }
-
-            function generateMatches(start, end, round, prefix) {
-                let html = '';
-                let matchIndex = 0;
-                
-                for (let i = start; i < end; i += 2) {
-                    const player1 = shuffledPeserta[i];
-                    const player2 = shuffledPeserta[i + 1];
-                    const matchId = `${prefix}-m${matchIndex}`;
-                    
-                    html += `
-                        <div class="match" data-match="${matchId}">
-                            <div class="player ${player1.empty ? 'empty' : ''}" 
-                                 data-slot="${matchId}-1"
-                                 data-player-index="${i}"
-                                 onclick="selectWinner('${matchId}', 1, ${i})">
-                                ${player1.nama_peserta}
-                            </div>
-                            <div class="player ${player2.empty ? 'empty' : ''}" 
-                                 data-slot="${matchId}-2"
-                                 data-player-index="${i + 1}"
-                                 onclick="selectWinner('${matchId}', 2, ${i + 1})">
-                                ${player2.nama_peserta}
-                            </div>
-                        </div>
-                    `;
-                    matchIndex++;
-                }
-                return html;
-            }
-
-            function generateEmptyMatches(count, round, prefix) {
-                let html = '';
-                for (let i = 0; i < count; i++) {
-                    const matchId = `${prefix}-m${i}`;
-                    html += `
-                        <div class="match" data-match="${matchId}">
-                            <div class="player empty" data-slot="${matchId}-1" onclick="selectWinnerNext('${matchId}', 1)">TBD</div>
-                            <div class="player empty" data-slot="${matchId}-2" onclick="selectWinnerNext('${matchId}', 2)">TBD</div>
-                        </div>
-                    `;
-                }
-                return html;
-            }
-
-            function selectWinner(matchId, slot, playerIndex) {
-                const player = shuffledPeserta[playerIndex];
-                
-                // Jangan bisa klik kalau BYE
-                if (player.empty) return;
-
-                // Ambil elemen match
-                const matchElement = document.querySelector(`[data-match="${matchId}"]`);
-                const player1Element = matchElement.querySelector(`[data-slot="${matchId}-1"]`);
-                const player2Element = matchElement.querySelector(`[data-slot="${matchId}-2"]`);
-
-                // Reset winner class
-                player1Element.classList.remove('winner');
-                player2Element.classList.remove('winner');
-
-                // Set winner
-                const winnerElement = slot === 1 ? player1Element : player2Element;
-                winnerElement.classList.add('winner');
-
-                // Tentukan next match
-                advanceWinner(matchId, player, playerIndex);
-            }
-
-            function selectWinnerNext(matchId, slot) {
-                const matchElement = document.querySelector(`[data-match="${matchId}"]`);
-                const slotElement = matchElement.querySelector(`[data-slot="${matchId}-${slot}"]`);
-                
-                // Cek apakah slot sudah terisi
-                if (slotElement.classList.contains('empty')) {
-                    alert('Pemain belum ditentukan untuk slot ini!');
-                    return;
-                }
-
-                // Reset winner di match ini
-                const player1Element = matchElement.querySelector(`[data-slot="${matchId}-1"]`);
-                const player2Element = matchElement.querySelector(`[data-slot="${matchId}-2"]`);
-                player1Element.classList.remove('winner');
-                player2Element.classList.remove('winner');
-
-                // Set winner
-                slotElement.classList.add('winner');
-
-                // Ambil data pemain
-                const playerName = slotElement.textContent.trim();
-                const playerIndex = slotElement.getAttribute('data-player-index');
-                
-                if (playerIndex) {
-                    const player = shuffledPeserta[parseInt(playerIndex)];
-                    advanceWinner(matchId, player, parseInt(playerIndex));
-                }
-            }
-
-            function advanceWinner(matchId, player, playerIndex) {
-                // Tentukan next match berdasarkan match saat ini
-                let nextMatchId, nextSlot;
-
-                // Untuk bracket 16
-                if (matchId.startsWith('r16-m')) {
-                    const matchNum = parseInt(matchId.split('m')[1]);
-                    nextMatchId = `qf-m${Math.floor(matchNum / 2)}`;
-                    nextSlot = (matchNum % 2) + 1;
-                } else if (matchId.startsWith('qf-m')) {
-                    const matchNum = parseInt(matchId.split('m')[1]);
-                    nextMatchId = `sf-m${Math.floor(matchNum / 2)}`;
-                    nextSlot = (matchNum % 2) + 1;
-                } else if (matchId.startsWith('sf-m')) {
-                    const matchNum = parseInt(matchId.split('m')[1]);
-                    nextMatchId = 'final';
-                    nextSlot = matchNum + 1;
-                }
-                // Untuk bracket 32
-                else if (matchId.startsWith('r32-m')) {
-                    const matchNum = parseInt(matchId.split('m')[1]);
-                    nextMatchId = `r16-m${Math.floor(matchNum / 2)}`;
-                    nextSlot = (matchNum % 2) + 1;
-                }
-
-                // Update next match
-                if (nextMatchId) {
-                    const nextSlotElement = document.querySelector(`[data-slot="${nextMatchId}-${nextSlot}"]`);
-                    if (nextSlotElement) {
-                        nextSlotElement.textContent = player.nama_peserta;
-                        nextSlotElement.classList.remove('empty');
-                        nextSlotElement.setAttribute('data-player-index', playerIndex);
-                        
-                        // Jika ini adalah final dan ada pemenang
-                        if (nextMatchId === 'final') {
-                            const finalMatch = document.querySelector(`[data-match="final"]`);
-                            const finalist1 = finalMatch.querySelector(`[data-slot="final-1"]`);
-                            const finalist2 = finalMatch.querySelector(`[data-slot="final-2"]`);
-                            
-                            // Cek apakah kedua finalist sudah terisi
-                            if (!finalist1.classList.contains('empty') && !finalist2.classList.contains('empty')) {
-                                // Enable klik untuk memilih juara
-                                finalist1.onclick = function() { declareChampion(finalist1.textContent.trim()); };
-                                finalist2.onclick = function() { declareChampion(finalist2.textContent.trim()); };
-                            }
-                        }
-                    }
-                }
-            }
-
-            function declareChampion(championName) {
-                const championElement = document.getElementById('champion');
-                championElement.textContent = '🏆 ' + championName + ' 🏆';
-                championElement.style.display = 'block';
-                
-                // Tambahkan efek confetti
-                setTimeout(() => {
-                    alert('Selamat kepada juara: ' + championName + '! 🎉');
-                }, 500);
-            }
-        </script>
-    </body>
-    </html>
-    <?php
-    exit;
-}
-
-// ============================================
-// HANDLER UNTUK SCORECARD SETUP
-// ============================================
+// Cek apakah ini request untuk scorecard setup
 if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
+    // Include file koneksi database
     try {
         include 'panggil.php';
     } catch (Exception $e) {
         die("Error koneksi database: " . $e->getMessage());
     }
 
+    // Ambil parameter
     $kegiatan_id = isset($_GET['kegiatan_id']) ? intval($_GET['kegiatan_id']) : null;
     $category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : null;
 
@@ -931,6 +141,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
         if($fetch_checkScore) {
             $message = "Score updated";
             if(empty($_POST['score'])) {
+                // Delete score if empty
                 $score = mysqli_query($conn,"DELETE FROM score WHERE id='".$fetch_checkScore['id']."'");
             } else {
                 $score = mysqli_query($conn,"UPDATE score SET score='".$_POST['score']."' WHERE id='".$fetch_checkScore['id']."'");
@@ -964,6 +175,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
         $show_score_board = mysqli_fetch_assoc($sql_show_score_board);
     }
 
+    // Tutup koneksi database
     $conn->close();
     
     // BAGIAN SCORECARD SETUP
@@ -1133,6 +345,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                 transform: none;
             }
 
+            /* Alert/Warning styles */
             .alert {
                 padding: 15px;
                 border-radius: 8px;
@@ -1145,6 +358,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                 color: #ffc107;
             }
 
+            /* Scorecard Styles */
             .scorecard-container {
                 background: rgba(45, 52, 54, 0.95);
                 border-radius: 20px;
@@ -1194,6 +408,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                 border-radius: 8px;
             }
 
+            /* NEW: Table-based Scorecard */
             .player-section {
                 margin-bottom: 40px;
                 background: rgba(0, 0, 0, 0.2);
@@ -1214,6 +429,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                 box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
             }
 
+            /* Score Table */
             .score-table-container {
                 overflow-x: auto;
                 margin: 20px 0;
@@ -1312,6 +528,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                 font-weight: 700;
             }
 
+            /* Score value styling */
             .arrow-input[value="x"],
             .arrow-input[value="X"] {
                 background: rgba(40, 167, 69, 0.1);
@@ -1381,6 +598,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                 background: rgba(116, 185, 255, 0.3);
             }
 
+            /* Table styles for index page */
             .table-wrapper {
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
@@ -1440,13 +658,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                 border: 1px solid rgba(15, 23, 42, 0.08);
                 background: #fff;
                 cursor: pointer;
-                margin-right: 5px;
-                text-decoration: none;
-                color: #333;
-            }
-
-            .btn:hover {
-                background: #f0f0f0;
             }
 
             .header-bar {
@@ -1477,6 +688,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                 color: white;
             }
 
+            /* Responsive adjustments */
             @media (max-width: 768px) {
                 .container {
                     max-width: 100%;
@@ -1546,8 +758,10 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     <body>
          <div class="container">
             <?php if(isset($_GET['resource'])) { ?>
+                <!-- ScoreBoard Data -->
                 <?php if($_GET['resource'] == 'form') { ?>
                     <a  class="back-btn" href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>">←</a>
+                    <!-- Form Setup -->
                     <form action="" method="post">
                         <div class="setup-form" id="setupForm">
                             <input type="hidden" id="local_time" name="local_time">
@@ -1557,6 +771,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                                 <div class="subtitle">Atur jumlah sesi dan anak panah</div>
                             </div>
 
+                            <!-- Info kategori dan peserta -->
                             <div class="category-info">
                                 <div class="category-name"><?= htmlspecialchars($kategoriData['name']) ?></div>
                                 <div class="event-name"><?= htmlspecialchars($kegiatanData['nama_kegiatan']) ?></div>
@@ -1566,6 +781,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                             <?php if (count($pesertaList) == 0): ?>
                                 <div class="alert alert-warning">
                                     <strong>Peringatan:</strong> Tidak ada peserta yang terdaftar dalam kategori ini.
+                                    Silakan pastikan ada peserta yang mendaftar terlebih dahulu.
                                 </div>
                             <?php endif; ?>
 
@@ -1579,7 +795,11 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                                 <input type="number" class="form-input" name="jumlahPanah" id="jumlahPanah" min="1"  value="3" placeholder="3">
                             </div>
 
-                            <button type="submit" name="create" class="create-btn" <?= count($pesertaList) == 0 ? 'disabled' : '' ?>>
+                            <!-- <button class="create-btn" onclick="createScorecard()" >
+                                Buat Scorecard
+                            </button> -->
+
+                            <button type="submit" name="create" class="create-btn" onclick="createScorecard()" <?= count($pesertaList) == 0 ? 'disabled' : '' ?>>
                                 Buat Scorecard
                             </button>
                         </div>
@@ -1612,10 +832,10 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                                                 <td><?= $a['jumlah_sesi'] ?></td>
                                                 <td><?= $a['jumlah_anak_panah'] ?></td>
                                                 <td>
-                                                    <a href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>&scoreboard=<?= $a['id'] ?>&rangking=true" class="btn">Ranking</a>
-                                                    <a href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>&scoreboard=<?= $a['id'] ?>" class="btn">Detail</a>
-                                                    <a href="detail.php?aduan=true&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>&scoreboard=<?= $a['id'] ?>" class="btn">Aduan</a>
-                                                    <button onclick="delete_score_board('<?= $kegiatan_id ?>', '<?= $category_id ?>', '<?= $a['id'] ?>')" class="btn">Hapus</button>
+                                                    <a href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>&scoreboard=<?= $a['id'] ?>&rangking=true">Ranking</a>
+                                                    <a href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>&scoreboard=<?= $a['id'] ?>">Detail</a>
+                                                    <!-- <button onclick="createScorecard('<?= $kegiatan_id ?>', '<?= $category_id ?>', '<?= $a['id'] ?>')">Hapus</button> -->
+                                                    <button onclick="delete_score_board('<?= $kegiatan_id ?>', '<?= $category_id ?>', '<?= $a['id'] ?>')">Hapus</button>
                                                 </td>
                                             </tr>
                                         <?php }?>
@@ -1626,6 +846,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                 <?php } ?>
             <?php }?>
 
+            <!-- Scorecard Display -->
             <div class="scorecard-container" id="scorecardContainer">
                 <div class="header-flex">
                     <a  class="back-btn" href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>">←</a>
@@ -1657,7 +878,10 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
 
                 <div class="scorecard-title">Informasi Skor</div>
 
-                <div id="playersContainer"></div>
+                <!-- Dynamic player sections will be generated here -->
+                <div id="playersContainer"> 
+                    <!-- Player sections akan dimuat di sini oleh JavaScript -->
+                </div>
 
                 <button class="edit-btn" onclick="editScorecard()">
                     Edit Setup
@@ -1666,8 +890,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
         </div>
 
         <script>
+            // Data peserta dari PHP
+
+            // ambil waktu lokal user
             <?php if($_GET['resource'] == 'form') { ?>
                 let now = new Date();
+                // format ke "YYYY-MM-DD HH:MM:SS"
                 let formatted = now.getFullYear() + "-" 
                     + String(now.getMonth()+1).padStart(2, '0') + "-"
                     + String(now.getDate()).padStart(2, '0') + " "
@@ -1677,10 +905,11 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
 
                 document.getElementById("local_time").value = formatted;
             <?php } ?>
-            
+            // rangking
             const pesertaData = <?= json_encode($pesertaList) ?>;
             <?php if(isset($_GET['rangking'])) { ?>
                 const peserta_score = <?= json_encode($peserta_score) ?>;
+                console.log(peserta_score);
                 function tambahAtributById(id, key, value) {
                     const peserta = pesertaData.find(p => p.id === id);
                     if (peserta) {
@@ -1695,16 +924,16 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
 
                 pesertaData.sort((a, b) => {
                     if (b.total_score !== a.total_score) {
-                        return b.total_score - a.total_score;
+                        return b.total_score - a.total_score; // urut berdasarkan total_score
                     }
-                    return b.x_score - a.x_score;
+                    return b.x_score - a.x_score; // kalau sama, urut x_score
                 });
+
             <?php } ?>
-            
+            // console.log(pesertaData);
             <?php if(isset($_GET['scoreboard'])) { ?>
                 openScoreBoard("<?= $show_score_board['jumlah_sesi'] ?>", "<?= $show_score_board['jumlah_anak_panah'] ?>");
             <?php } ?> 
-            
             function delete_score_board(kegiatan_id, category_id, id) {
                 if(confirm("Apakah anda yakin akan menghapus data ini?")) {
                     window.location.href = `detail.php?action=scorecard&resource=index&kegiatan_id=${kegiatan_id}&category_id=${category_id}&delete_score_board=${id}`;
@@ -1712,6 +941,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
             }
 
             <?php 
+            
                 if(isset($mysql_data_score)) {
                     while($jatuh = mysqli_fetch_array($mysql_data_score)) { ?> 
                         document.getElementById("peserta_<?= $jatuh['peserta_id'] ?>_a<?= $jatuh['arrow'] ?>_s<?= $jatuh['session'] ?>").value = "<?= $jatuh['score'] ?>";
@@ -1725,210 +955,392 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
             }
 
             function openScoreBoard(jumlahSesi_data, jumlahPanah_data) {
+                // Update header counts
                 const jumlahSesi = parseInt(jumlahSesi_data);
                 const jumlahPanah = parseInt(jumlahPanah_data);
                 document.getElementById('panahCount').textContent = jumlahSesi * jumlahPanah;
+
+                // Generate player sections untuk setiap peserta
                 generatePlayerSections(jumlahSesi, jumlahPanah);
+
+                // Show scorecard, hide form
                 document.getElementById('setupForm').style.display = 'none';
                 document.getElementById('scorecardContainer').style.display = 'block';
+                
+                // Adjust container width untuk scorecard
+                document.querySelector('.container').style.maxWidth = '1200px';
+            }
+
+            function createScorecard() {
+                const jumlahSesi = parseInt(document.getElementById('jumlahSesi').value);
+                const jumlahPanah = parseInt(document.getElementById('jumlahPanah').value);
+                // const jumlahSesi = parseInt(document.getElementById('jumlahSesi').value);
+                // const jumlahPanah = parseInt(document.getElementById('jumlahPanah').value);
+
+                if (!jumlahSesi || !jumlahPanah) {
+                    alert('Mohon isi jumlah sesi dan anak panah');
+                    return;
+                }
+
+                if (jumlahSesi > 12 || jumlahPanah > 10) {
+                    alert('Maksimal 12 sesi dan 10 anak panah untuk tampilan optimal');
+                    return;
+                }
+
+                if (pesertaData.length === 0) {
+                    alert('Tidak ada peserta dalam kategori ini. Silakan pilih kategori lain atau tambah peserta.');
+                    return;
+                }
+
+                // Update header counts
+                document.getElementById('panahCount').textContent = jumlahSesi * jumlahPanah;
+
+                // Generate player sections untuk setiap peserta
+                generatePlayerSections(jumlahSesi, jumlahPanah);
+
+                // Show scorecard, hide form
+                document.getElementById('setupForm').style.display = 'none';
+                document.getElementById('scorecardContainer').style.display = 'block';
+                
+                // Adjust container width untuk scorecard
                 document.querySelector('.container').style.maxWidth = '1200px';
             }
 
             function generatePlayerSections(jumlahSesi, jumlahPanah) {
-                const playersContainer = document.getElementById('playersContainer');
-                playersContainer.innerHTML = '';
+    const playersContainer = document.getElementById('playersContainer');
+    playersContainer.innerHTML = '';
 
-                pesertaData.forEach((peserta, index) => {
-                    const playerId = `peserta_${peserta.id}`;
-                    const playerName = peserta.nama_peserta;
-                    
-                    const playerSection = document.createElement('div');
-                    playerSection.className = 'player-section';
-                    playerSection.innerHTML = `
-                        <div class="player-header">
-                            ${playerName} (${peserta.jenis_kelamin}) ${typeof peserta.total_score !== 'undefined' ? ` - Juara ${index + 1}` : ''}
-                        </div>
-                        <div class="score-table-container">
-                            <table class="score-table">
-                                <thead>
-                                    <tr>
-                                        <th rowspan="2" style="width: 60px;">Sesi</th>
-                                        <th colspan="${jumlahPanah}">Anak Panah</th>
-                                        <th rowspan="2" style="width: 60px;">Total</th>
-                                        <th rowspan="2" style="width: 60px;">End</th>
-                                    </tr>
-                                    <tr>
-                                        ${Array.from({length: jumlahPanah}, (_, i) => `<th style="width: 50px;">${i + 1}</th>`).join('')}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${generateTableRows(playerId, jumlahSesi, jumlahPanah)}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="total-summary" id="${playerId}_summary">
-                            <div style="font-size: 14px; margin-bottom: 8px;">Total Keseluruhan</div>
-                            <div class="grand-total" id="${playerId}_grand_total">0 poin</div>
-                            ${typeof peserta.x_score !== 'undefined' ? `<div class="x-count">X Score: ${peserta.x_score}</div>` : ''}
-                        </div>
-                    `;
-                    
-                    playersContainer.appendChild(playerSection);
-                });
+    // Generate section untuk setiap peserta
+    pesertaData.forEach((peserta, index) => {
+        const playerId = `peserta_${peserta.id}`;
+        const playerName = peserta.nama_peserta;
+        
+        const playerSection = document.createElement('div');
+        playerSection.className = 'player-section';
+        playerSection.innerHTML = `
+            <div class="player-header">
+                ${playerName} (${peserta.jenis_kelamin}) ${typeof peserta.total_score !== 'undefined' ? ` - Juara ${index + 1}` : ''}
+            </div>
+            <div class="score-table-container">
+                <table class="score-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 60px;">Sesi</th>
+                            <th colspan="${jumlahPanah}">Anak Panah</th>
+                            <th rowspan="2" style="width: 60px;">Total</th>
+                            <th rowspan="2" style="width: 60px;">End</th>
+                        </tr>
+                        <tr>
+                            ${Array.from({length: jumlahPanah}, (_, i) => `<th style="width: 50px;">${i + 1}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${generateTableRows(playerId, jumlahSesi, jumlahPanah)}
+                    </tbody>
+                </table>
+            </div>
+            <div class="total-summary" id="${playerId}_summary">
+                <div style="font-size: 14px; margin-bottom: 8px;">Total Keseluruhan</div>
+                <div class="grand-total" id="${playerId}_grand_total">0 poin</div>
+                ${typeof peserta.x_score !== 'undefined' ? `<div class="x-count">X Score: ${peserta.x_score}</div>` : ''}
+            </div>
+        `;
+        
+        playersContainer.appendChild(playerSection);
+    });
+}
+
+function generateTableRows(playerId, jumlahSesi, jumlahPanah) {
+    let rowsHtml = '';
+    
+    // Generate rows untuk setiap sesi
+    for (let session = 1; session <= jumlahSesi; session++) {
+        const arrowInputs = Array.from({length: jumlahPanah}, (_, arrow) => `
+            <td>
+                <input type="text" 
+                       class="arrow-input" 
+                       <?= (isset($_GET['rangking'])) ? 'disabled' : '' ?>
+                       id="${playerId}_a${arrow + 1}_s${session}"
+                       placeholder=""
+                       oninput="validateArrowInput(this);hitungPerArrow('${playerId}', '${arrow + 1}', '${session}','${jumlahPanah}', this)">
+            </td>
+        `).join('');
+        
+        rowsHtml += `
+            <tr class="session-row">
+                <td class="session-label">S${session}</td>
+                ${arrowInputs}
+                <td class="total-cell">
+                    <input type="text" 
+                           class="arrow-input" 
+                           id="${playerId}_total_a${session}"
+                           readonly
+                           style="background: rgba(253, 203, 110, 0.1); border-color: #e17055;">
+                </td>
+                <td class="end-cell">
+                    <input type="text" 
+                           class="arrow-input" 
+                           id="${playerId}_end_a${session}"
+                           readonly
+                           style="background: rgba(0, 184, 148, 0.1); border-color: #00b894;">
+                </td>
+            </tr>
+        `;
+    }
+    
+    return rowsHtml;
+}
+
+// Update function hitungPerArrow untuk bekerja dengan table structure yang benar
+function hitungPerArrow(playerId, arrow, session, totalArrow, el) {
+    // Hitung total untuk sesi ini
+    let sessionTotal = 0;
+    
+    // Loop melalui semua arrow dalam sesi ini
+    for(let a = 1; a <= totalArrow; a++) {
+        const input = document.getElementById(`${playerId}_a${a}_s${session}`);
+        if(input && input.value) {
+            let val = input.value.trim().toLowerCase();
+            let score = 0;
+            if (val === "x") {
+                score = 10;
+            } else if (val === "m") {
+                score = 0;
+            } else if (!isNaN(val) && val !== "") {
+                score = parseInt(val);
             }
+            sessionTotal += score;
+        }
+    }
+    
+    // Update total untuk sesi ini
+    const totalInput = document.getElementById(`${playerId}_total_a${session}`);
+    if(totalInput) {
+        totalInput.value = sessionTotal;
+    }
+    
+    // Hitung dan update End (running total) untuk semua sesi yang ada
+    let maxSession = 20; // Asumsi maksimal 20 sesi
+    let runningTotal = 0;
+    
+    for(let s = 1; s <= maxSession; s++) {
+        const sessionTotalInput = document.getElementById(`${playerId}_total_a${s}`);
+        const sessionEndInput = document.getElementById(`${playerId}_end_a${s}`);
+        
+        if(sessionTotalInput && sessionEndInput) {
+            // Tambahkan total sesi ini ke running total
+            if(sessionTotalInput.value && sessionTotalInput.value !== '') {
+                runningTotal += parseInt(sessionTotalInput.value) || 0;
+            }
+            // Update End value
+            sessionEndInput.value = runningTotal;
+        } else {
+            // Tidak ada sesi selanjutnya, keluar dari loop
+            break;
+        }
+    }
+    
+    // Update grand total dengan running total terakhir
+    const grandTotalElement = document.getElementById(`${playerId}_grand_total`);
+    if(grandTotalElement) {
+        grandTotalElement.innerText = runningTotal + " poin";
+    }
+    
+    // Save to database if element provided
+    if(el != null) {
+        let arr_playerID = playerId.split("_");
+        let nama = "Marsha and The Bear";
+        
+        fetch("", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: "save_score=1" +
+                "&nama=" + encodeURIComponent(nama) +
+                "&peserta_id=" + encodeURIComponent(arr_playerID[1]) +
+                "&arrow=" + encodeURIComponent(arrow) +
+                "&session=" + encodeURIComponent(session) + 
+                "&score=" + encodeURIComponent(document.getElementById(el.id).value)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Score saved: " + data.message);
+        })
+        .catch(err => console.error(err));
+    }
+    
+    return 0;
+}
 
-            function generateTableRows(playerId, jumlahSesi, jumlahPanah) {
-                let rowsHtml = '';
+function validateArrowInput(el) {
+    let val = el.value.trim().toLowerCase();
+
+    // hanya boleh angka 0–10, huruf x, atau m
+    if (!/^(10|[0-9]|x|m)?$/i.test(val)) {
+        el.value = ""; // reset kalau tidak valid
+        return;
+    }
+    
+    // Apply visual styling based on value
+    if (val === 'x' || val === 'X') {
+        el.style.background = 'rgba(40, 167, 69, 0.1)';
+        el.style.borderColor = '#28a745';
+        el.style.color = '#28a745';
+        el.style.fontWeight = '700';
+    } else if (val === 'm' || val === 'M') {
+        el.style.background = 'rgba(220, 53, 69, 0.1)';
+        el.style.borderColor = '#dc3545';
+        el.style.color = '#dc3545';
+        el.style.fontWeight = '700';
+    } else if (val === '10') {
+        el.style.background = 'rgba(40, 167, 69, 0.1)';
+        el.style.borderColor = '#28a745';
+        el.style.color = '#28a745';
+        el.style.fontWeight = '700';
+    } else if (val === '9' || val === '8') {
+        el.style.background = 'rgba(255, 193, 7, 0.1)';
+        el.style.borderColor = '#ffc107';
+        el.style.color = '#856404';
+        el.style.fontWeight = '600';
+    } else {
+        // Reset styling for other values
+        el.style.background = 'transparent';
+        el.style.borderColor = 'transparent';
+        el.style.color = '#333';
+        el.style.fontWeight = '600';
+    }
+}
+
+function editScorecard() {
+    document.getElementById('setupForm').style.display = 'block';
+    document.getElementById('scorecardContainer').style.display = 'none';
+    
+    // Reset container width
+    document.querySelector('.container').style.maxWidth = '500px';
+}
+
+
+
+            function generateSessionCards(playerId, jumlahSesi, jumlahPanah) {
+                let sessionsHtml = '';
                 
                 for (let session = 1; session <= jumlahSesi; session++) {
-                    const arrowInputs = Array.from({length: jumlahPanah}, (_, arrow) => `
-                        <td>
-                            <input type="text" 
-                                   class="arrow-input" 
-                                   <?= (isset($_GET['rangking'])) ? 'disabled' : '' ?>
-                                   id="${playerId}_a${arrow + 1}_s${session}"
-                                   placeholder=""
-                                   oninput="validateArrowInput(this);hitungPerArrow('${playerId}', '${arrow + 1}', '${session}','${jumlahPanah}', this)">
-                        </td>
+                    // const arrowsHtml = Array.from({length: jumlahPanah}, (_, arrow) => `
+                    //     <input type="text" 
+                    //            class="arrow-input" 
+                    //            id="${playerId}_s${session}_a${arrow + 1}"
+                    //            min="0" 
+                    //            max="10" 
+                    //            placeholder="${arrow + 1}"
+                    //            oninput="validateArrowInput(this); updateSessionTotal('${playerId}', ${session}, ${jumlahSesi}); hitungPerArrow('${playerId}')"
+                    //            onchange="this.blur()">
+                    // `).join('');
+                    const arrowsHtml = Array.from({length: jumlahPanah}, (_, arrow) => `
+                        <input type="text" 
+                               class="arrow-input" 
+                               <?= (isset($_GET['rangking'])) ? 'disabled' : '' ?>
+                               id="${playerId}_a${arrow + 1}_s${session}"
+                               placeholder="${arrow + 1}"
+                               oninput="validateArrowInput(this);hitungPerArrow('${playerId}', '${arrow + 1}', '${session}','${jumlahPanah}', this)">
                     `).join('');
                     
-                    rowsHtml += `
-                        <tr class="session-row">
-                            <td class="session-label">S${session}</td>
-                            ${arrowInputs}
-                            <td class="total-cell">
-                                <input type="text" 
-                                       class="arrow-input" 
-                                       id="${playerId}_total_a${session}"
-                                       readonly
-                                       style="background: rgba(253, 203, 110, 0.1); border-color: #e17055;">
-                            </td>
-                            <td class="end-cell">
-                                <input type="text" 
-                                       class="arrow-input" 
-                                       id="${playerId}_end_a${session}"
-                                       readonly
-                                       style="background: rgba(0, 184, 148, 0.1); border-color: #00b894;">
-                            </td>
-                        </tr>
+                    sessionsHtml += `
+                        <div class="session-card">
+                            <div class="session-header">S${session}</div>
+                            <div class="arrows-container" id="${playerId}_session_${session}">
+                                ${arrowsHtml}
+                            </div>
+                        </div>
                     `;
+                            // <div class="session-total" id="${playerId}_total_s${session}">Total: 0</div>
+
                 }
-                
-                return rowsHtml;
+
+                const arrowsHtmlTotal = Array.from({length: jumlahPanah}, (_, arrow) => `
+                    <input type="text" 
+                            class="arrow-input" 
+                            id="${playerId}_total_a${arrow + 1}"
+                            placeholder="${arrow + 1}"
+                            readonly>
+                `).join('');
+                sessionsHtml += `
+                    <div class="session-card">
+                        <div class="session-header">Total</div>
+                        <div class="arrows-container" id="${playerId}_session_total">
+                            ${arrowsHtmlTotal}
+                        </div>
+                    </div>
+                `;
+
+                const arrowsHtmlEnd = Array.from({length: jumlahPanah}, (_, arrow) => `
+                    <input type="text" 
+                            class="arrow-input" 
+                            id="${playerId}_end_a${arrow + 1}"
+                            placeholder="${arrow + 1}"
+                            readonly>
+                `).join('');
+            
+                sessionsHtml += `
+                    <div class="session-card">
+                        <div class="session-header">End</div>
+                        <div class="arrows-container" id="${playerId}_session_end">
+                            ${arrowsHtmlEnd}
+                        </div>
+                    </div>
+                `;
+
+                return sessionsHtml;
             }
 
-            function hitungPerArrow(playerId, arrow, session, totalArrow, el) {
+            function updateSessionTotal(playerId, session, totalSessions) {
+                const sessionInputs = document.querySelectorAll(`input[id^="${playerId}_s${session}_a"]`);
                 let sessionTotal = 0;
                 
-                for(let a = 1; a <= totalArrow; a++) {
-                    const input = document.getElementById(`${playerId}_a${a}_s${session}`);
-                    if(input && input.value) {
-                        let val = input.value.trim().toLowerCase();
-                        let score = 0;
-                        if (val === "x") {
-                            score = 10;
-                        } else if (val === "m") {
-                            score = 0;
-                        } else if (!isNaN(val) && val !== "") {
-                            score = parseInt(val);
-                        }
-                        sessionTotal += score;
+                sessionInputs.forEach(input => {
+                    const value = parseInt(input.value) || 0;
+                    if (value >= 0 && value <= 10) {
+                        sessionTotal += value;
+                        input.style.borderColor = value >= 8 ? '#00b894' : value >= 6 ? '#fdcb6e' : 'rgba(255, 255, 255, 0.2)';
+                    } else if (input.value !== '') {
+                        input.value = '';
+                        input.style.borderColor = '#ff7675';
                     }
+                });
+                
+                // Update session total
+                const sessionTotalElement = document.getElementById(`${playerId}_total_s${session}`);
+                if (sessionTotalElement) {
+                    sessionTotalElement.textContent = `Total: ${sessionTotal}`;
                 }
                 
-                const totalInput = document.getElementById(`${playerId}_total_a${session}`);
-                if(totalInput) {
-                    totalInput.value = sessionTotal;
-                }
+                // Update grand total
+                updateGrandTotal(playerId, totalSessions);
+            }
+
+            function updateGrandTotal(playerId, totalSessions) {
+                let grandTotal = 0;
                 
-                let maxSession = 20;
-                let runningTotal = 0;
-                
-                for(let s = 1; s <= maxSession; s++) {
-                    const sessionTotalInput = document.getElementById(`${playerId}_total_a${s}`);
-                    const sessionEndInput = document.getElementById(`${playerId}_end_a${s}`);
-                    
-                    if(sessionTotalInput && sessionEndInput) {
-                        if(sessionTotalInput.value && sessionTotalInput.value !== '') {
-                            runningTotal += parseInt(sessionTotalInput.value) || 0;
-                        }
-                        sessionEndInput.value = runningTotal;
-                    } else {
-                        break;
-                    }
+                for (let session = 1; session <= totalSessions; session++) {
+                    const sessionInputs = document.querySelectorAll(`input[id^="${playerId}_s${session}_a"]`);
+                    sessionInputs.forEach(input => {
+                        const value = parseInt(input.value) || 0;
+                        grandTotal += value;
+                    });
                 }
                 
                 const grandTotalElement = document.getElementById(`${playerId}_grand_total`);
-                if(grandTotalElement) {
-                    grandTotalElement.innerText = runningTotal + " poin";
-                }
-                
-                if(el != null) {
-                    let arr_playerID = playerId.split("_");
-                    let nama = "Marsha and The Bear";
-                    
-                    fetch("", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded"
-                        },
-                        body: "save_score=1" +
-                            "&nama=" + encodeURIComponent(nama) +
-                            "&peserta_id=" + encodeURIComponent(arr_playerID[1]) +
-                            "&arrow=" + encodeURIComponent(arrow) +
-                            "&session=" + encodeURIComponent(session) + 
-                            "&score=" + encodeURIComponent(document.getElementById(el.id).value)
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Score saved: " + data.message);
-                    })
-                    .catch(err => console.error(err));
-                }
-                
-                return 0;
-            }
-
-            function validateArrowInput(el) {
-                let val = el.value.trim().toLowerCase();
-
-                if (!/^(10|[0-9]|x|m)?$/i.test(val)) {
-                    el.value = "";
-                    return;
-                }
-                
-                if (val === 'x' || val === 'X') {
-                    el.style.background = 'rgba(40, 167, 69, 0.1)';
-                    el.style.borderColor = '#28a745';
-                    el.style.color = '#28a745';
-                    el.style.fontWeight = '700';
-                } else if (val === 'm' || val === 'M') {
-                    el.style.background = 'rgba(220, 53, 69, 0.1)';
-                    el.style.borderColor = '#dc3545';
-                    el.style.color = '#dc3545';
-                    el.style.fontWeight = '700';
-                } else if (val === '10') {
-                    el.style.background = 'rgba(40, 167, 69, 0.1)';
-                    el.style.borderColor = '#28a745';
-                    el.style.color = '#28a745';
-                    el.style.fontWeight = '700';
-                } else if (val === '9' || val === '8') {
-                    el.style.background = 'rgba(255, 193, 7, 0.1)';
-                    el.style.borderColor = '#ffc107';
-                    el.style.color = '#856404';
-                    el.style.fontWeight = '600';
-                } else {
-                    el.style.background = 'transparent';
-                    el.style.borderColor = 'transparent';
-                    el.style.color = '#333';
-                    el.style.fontWeight = '600';
+                if (grandTotalElement) {
+                    grandTotalElement.textContent = `${grandTotal} poin`;
                 }
             }
 
             function editScorecard() {
                 document.getElementById('setupForm').style.display = 'block';
                 document.getElementById('scorecardContainer').style.display = 'none';
-                document.querySelector('.container').style.maxWidth = '500px'; 
+                
+                // Reset container width
+                document.querySelector('.container').style.maxWidth = '500px';
             }
         </script>
     </body>
@@ -1937,16 +1349,18 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     exit;
 }
 
-// ============================================
-// CEK EXPORT EXCEL
-// ============================================
+// Cek apakah ini request untuk export Excel
 if (isset($_GET['export']) && $_GET['export'] == 'excel') {
+    // BAGIAN EXPORT EXCEL
+    
+    // Include file koneksi database
     try {
         include 'panggil.php';
     } catch (Exception $e) {
         die("Error koneksi database: " . $e->getMessage());
     }
 
+    // Ambil parameter dari URL
     $kegiatan_id = isset($_GET['kegiatan_id']) ? intval($_GET['kegiatan_id']) : null;
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
     $filter_kategori = isset($_GET['filter_kategori']) ? intval($_GET['filter_kategori']) : 0;
@@ -1956,6 +1370,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
         die("ID Kegiatan tidak valid.");
     }
 
+    // Ambil data kegiatan
     $kegiatanData = [];
     try {
         $queryKegiatan = "SELECT id, nama_kegiatan FROM kegiatan WHERE id = ?";
@@ -1974,6 +1389,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
         die("Error mengambil data kegiatan: " . $e->getMessage());
     }
 
+    // Query untuk mengambil data peserta dengan filter yang sama
     $whereConditions = ["p.kegiatan_id = ?"];
     $params = [$kegiatan_id];
     $types = "i";
@@ -1999,6 +1415,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
 
     $whereClause = implode(" AND ", $whereConditions);
 
+    // Query untuk mengambil peserta
     $queryPeserta = "
         SELECT 
             p.id,
@@ -2039,12 +1456,14 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
         die("Error mengambil data peserta: " . $e->getMessage());
     }
 
+    // Set headers untuk download Excel
     $filename = "Daftar_Peserta_" . preg_replace('/[^A-Za-z0-9_\-]/', '_', $kegiatanData['nama_kegiatan']) . "_" . date('Y-m-d_H-i-s') . ".xls";
 
     header('Content-Type: application/vnd.ms-excel');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('Cache-Control: max-age=0');
 
+    // Mulai output Excel
     echo '<!DOCTYPE html>';
     echo '<html>';
     echo '<head>';
@@ -2054,6 +1473,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     echo 'th, td { border: 1px solid #000; padding: 8px; text-align: left; vertical-align: top; }';
     echo 'th { background-color: #4472C4; color: white; font-weight: bold; text-align: center; }';
     echo '.center { text-align: center; }';
+    echo '.number { text-align: center; }';
     echo '.badge { background-color: #E7E6E6; padding: 2px 6px; border-radius: 3px; font-size: 11px; }';
     echo '.badge-male { background-color: #D4E6F1; color: #1B4F72; }';
     echo '.badge-female { background-color: #FADBD8; color: #922B21; }';
@@ -2066,16 +1486,19 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     echo '</head>';
     echo '<body>';
 
+    // Header informasi
     echo '<div class="header-info">';
     echo '<h2>' . htmlspecialchars($kegiatanData['nama_kegiatan']) . '</h2>';
     echo '<p><strong>Total Peserta:</strong> ' . count($pesertaList) . ' orang</p>';
     echo '<p><strong>Tanggal Export:</strong> ' . date('d F Y, H:i:s') . '</p>';
 
+    // Tambahkan info filter jika ada
     if (!empty($search) || $filter_kategori > 0 || !empty($filter_gender)) {
         echo '<p><strong>Filter yang diterapkan:</strong>';
         $filters = [];
         if (!empty($search)) $filters[] = "Pencarian: \"$search\"";
         if ($filter_kategori > 0) {
+            // Ambil nama kategori
             $queryKat = "SELECT name FROM categories WHERE id = ?";
             $stmtKat = $conn->prepare($queryKat);
             $stmtKat->bind_param("i", $filter_kategori);
@@ -2093,6 +1516,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     }
     echo '</div>';
 
+    // Tabel data peserta
     echo '<table>';
     echo '<thead>';
     echo '<tr>';
@@ -2120,9 +1544,11 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
             echo '<td class="center">' . date('d/m/Y', strtotime($peserta['tanggal_lahir'])) . '</td>';
             echo '<td class="center">' . $peserta['umur'] . ' tahun</td>';
             
+            // Jenis kelamin dengan styling
             $genderClass = $peserta['jenis_kelamin'] == 'Laki-laki' ? 'badge-male' : 'badge-female';
             echo '<td class="center"><span class="badge ' . $genderClass . '">' . htmlspecialchars($peserta['jenis_kelamin']) . '</span></td>';
             
+            // Kategori dengan info rentang umur
             echo '<td>';
             echo '<span class="badge">' . htmlspecialchars($peserta['category_name']) . '</span><br>';
             echo '<small>(' . $peserta['min_age'] . '-' . $peserta['max_age'] . ' thn, ';
@@ -2135,6 +1561,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
             echo '<td class="center">' . htmlspecialchars($peserta['kelas'] ?: '-') . '</td>';
             echo '<td>' . htmlspecialchars($peserta['nomor_hp']) . '</td>';
             
+            // Status pembayaran (tanpa gambar, hanya teks)
             if (!empty($peserta['bukti_pembayaran'])) {
                 echo '<td class="center"><span class="badge badge-paid">SUDAH BAYAR</span><br><small>File: ' . htmlspecialchars($peserta['bukti_pembayaran']) . '</small></td>';
             } else {
@@ -2152,10 +1579,12 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     echo '</tbody>';
     echo '</table>';
 
+    // Statistik di bagian bawah
     echo '<br><br>';
     echo '<div class="header-info">';
     echo '<h3>Ringkasan Statistik</h3>';
 
+    // Hitung statistik
     $statistik = [
         'total' => count($pesertaList),
         'laki_laki' => 0,
@@ -2185,6 +1614,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
         $statistik['kategori'][$kategori]++;
     }
 
+    // Tabel statistik
     echo '<table style="width: 50%; margin-top: 10px;">';
     echo '<tr><th>Keterangan</th><th>Jumlah</th></tr>';
     echo '<tr><td>Total Peserta</td><td class="center"><strong>' . $statistik['total'] . '</strong></td></tr>';
@@ -2194,6 +1624,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     echo '<tr><td>Belum Bayar</td><td class="center">' . $statistik['belum_bayar'] . '</td></tr>';
     echo '</table>';
 
+    // Distribusi per kategori jika ada
     if (!empty($statistik['kategori'])) {
         echo '<br>';
         echo '<h4>Distribusi per Kategori:</h4>';
@@ -2212,22 +1643,24 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     echo '</body>';
     echo '</html>';
 
+    // Tutup koneksi database
     $conn->close();
     exit;
 }
 
-// ============================================
-// BAGIAN TAMPILAN NORMAL (DAFTAR PESERTA)
-// ============================================
+// BAGIAN TAMPILAN NORMAL (HTML)
 
+// Include file koneksi database
 try {
     include 'panggil.php';
 } catch (Exception $e) {
     die("Error koneksi database: " . $e->getMessage());
 }
 
+// Ambil ID kegiatan dari URL atau ambil kegiatan pertama yang tersedia
 $kegiatan_id = isset($_GET['kegiatan_id']) ? intval($_GET['kegiatan_id']) : null;
 
+// Jika tidak ada kegiatan_id, ambil kegiatan pertama yang tersedia
 if (!$kegiatan_id) {
     try {
         $queryFirstKegiatan = "SELECT id FROM kegiatan WHERE id = " . (isset($_GET['POST']) ? intval($_GET['POST']) : $_GET['id']);
@@ -2241,10 +1674,12 @@ if (!$kegiatan_id) {
     }
 }
 
+// Jika masih tidak ada kegiatan
 if (!$kegiatan_id) {
     die("Tidak ada kegiatan yang tersedia.");
 }
 
+// Ambil data kegiatan
 $kegiatanData = [];
 try {
     $queryKegiatan = "SELECT id, nama_kegiatan FROM kegiatan WHERE id = ?";
@@ -2263,10 +1698,12 @@ try {
     die("Error mengambil data kegiatan: " . $e->getMessage());
 }
 
+// Handle pencarian dan filter
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $filter_kategori = isset($_GET['filter_kategori']) ? intval($_GET['filter_kategori']) : 0;
 $filter_gender = isset($_GET['filter_gender']) ? $_GET['filter_gender'] : '';
 
+// Query untuk mengambil data peserta dengan filter
 $whereConditions = ["p.kegiatan_id = ?"];
 $params = [$kegiatan_id];
 $types = "i";
@@ -2292,6 +1729,7 @@ if (!empty($filter_gender)) {
 
 $whereClause = implode(" AND ", $whereConditions);
 
+// Query untuk mengambil peserta (dengan bukti_pembayaran)
 $queryPeserta = "
     SELECT 
         p.id,
@@ -2335,6 +1773,7 @@ try {
     die("Error mengambil data peserta: " . $e->getMessage());
 }
 
+// Query untuk mengambil semua kategori untuk filter
 $kategoriesList = [];
 try {
     $queryKategori = "
@@ -2357,6 +1796,7 @@ try {
     // Biarkan kosong jika error
 }
 
+// Statistik
 $statistik = [
     'total' => $totalPeserta,
     'laki_laki' => 0,
@@ -2373,6 +1813,7 @@ foreach ($pesertaList as $peserta) {
         $statistik['perempuan']++;
     }
     
+    // Statistik pembayaran
     if (!empty($peserta['bukti_pembayaran'])) {
         $statistik['sudah_bayar']++;
     } else {
@@ -2575,34 +2016,31 @@ foreach ($pesertaList as $peserta) {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
+        /* Input button styles */
+        .input-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 10px 16px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-left: 8px;
+            display: none;
+        }
+
+        .input-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(40, 167, 69, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
         .filter-buttons {
             display: flex;
             flex-direction: column;
             gap: 8px;
-        }
-
-        .btn-input {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: none;
-            text-align: center;
-        }
-
-        .btn-input:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-        }
-
-        .btn-input.show {
-            display: inline-block;
         }
 
         .table-container {
@@ -2731,6 +2169,7 @@ foreach ($pesertaList as $peserta) {
             opacity: 1;
         }
 
+        /* Modal untuk preview image */
         .modal {
             display: none;
             position: fixed;
@@ -2897,6 +2336,7 @@ foreach ($pesertaList as $peserta) {
         <div class="content">
             <a href="kegiatan.view.php" class="back-link">← Kembali Ke Kegiatan</a>
 
+            <!-- Statistik -->
             <div class="statistics">
                 <div class="stat-card primary">
                     <div class="stat-number"><?= $statistik['total'] ?></div>
@@ -2924,6 +2364,7 @@ foreach ($pesertaList as $peserta) {
                 </div>
             </div>
 
+            <!-- Filter dan Pencarian -->
             <div class="filters">
                 <form method="GET" action="">
                     <input type="hidden" name="kegiatan_id" value="<?= $kegiatan_id ?>">
@@ -2963,17 +2404,21 @@ foreach ($pesertaList as $peserta) {
                         
                         <div class="filter-group filter-buttons">
                             <button type="submit" class="btn btn-primary">Filter</button>
-                            <a href="#" 
-                               id="inputBtn"
-                               class="btn-input <?= $filter_kategori > 0 ? 'show' : '' ?>"
-                               onclick="goToInput(event)">
-                                📝 Input Score
-                            </a>
+                            
+                            <!-- Input Button - Hanya muncul jika kategori dipilih -->
+                            <?php if (isset($filter_kategori) && $filter_kategori > 0): ?>
+                                <a href="?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $filter_kategori ?>" 
+                                   class="btn btn-success input-btn" 
+                                   title="Setup scorecard untuk kategori yang dipilih">
+                                    Input
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </form>
             </div>
 
+            <!-- Actions -->
             <div class="actions">
                 <div>
                     <?php if ($totalPeserta > 0): ?>
@@ -2995,6 +2440,7 @@ foreach ($pesertaList as $peserta) {
                 </div>
             </div>
 
+            <!-- Tabel Peserta -->
             <div class="table-container">
                 <?php if ($totalPeserta > 0): ?>
                     <table class="table">
@@ -3106,6 +2552,7 @@ foreach ($pesertaList as $peserta) {
         </div>
     </div>
 
+    <!-- Modal untuk preview bukti pembayaran -->
     <div id="paymentModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -3113,30 +2560,29 @@ foreach ($pesertaList as $peserta) {
                 <h3 id="modal-title">Bukti Pembayaran</h3>
             </div>
             <div class="modal-body">
-                <div id="modal-image-container"></div>
+                <div id="modal-image-container">
+                    <!-- Image akan dimuat di sini -->
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Event listener untuk select kategori - update button visibility dan auto-submit
-        document.getElementById('filter_kategori').addEventListener('change', function() {
-            updateInputButton();
+        // Auto submit form saat filter berubah
+        document.querySelectorAll('select[name="filter_kategori"], select[name="filter_gender"]').forEach(function(select) {
+            select.addEventListener('change', function() {
+                this.form.submit();
+            });
         });
 
-        // Event listener untuk select gender
-        document.getElementById('filter_gender').addEventListener('change', function() {
-            updateInputButton();
-        });
-
-        // Search dengan Enter
+        // Enter key untuk search
         document.getElementById('search').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 this.form.submit();
             }
         });
 
-        // Clear search dengan Escape
+        // Clear search dengan Escape key
         document.getElementById('search').addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 this.value = '';
@@ -3144,39 +2590,40 @@ foreach ($pesertaList as $peserta) {
             }
         });
 
-        // Function untuk update tombol input
-        function updateInputButton() {
-            const kategoriSelect = document.getElementById('filter_kategori');
-            const inputBtn = document.getElementById('inputBtn');
-            
-            if (kategoriSelect.value && kategoriSelect.value !== '') {
-                inputBtn.classList.add('show');
-                inputBtn.href = 'detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=' + kategoriSelect.value;
-            } else {
-                inputBtn.classList.remove('show');
-            }
-        }
-
-        // Function untuk handle klik tombol input
-        function goToInput(e) {
-            const kategoriSelect = document.getElementById('filter_kategori');
-            
-            if (!kategoriSelect.value || kategoriSelect.value === '') {
-                e.preventDefault();
-                alert('Silakan pilih kategori terlebih dahulu!');
-                return false;
-            }
-            
-            // Redirect ke halaman scorecard
-            window.location.href = 'detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=' + kategoriSelect.value;
-        }
-
-        // Initialize tombol input saat page load
+        // Inisialisasi Input Button
         document.addEventListener('DOMContentLoaded', function() {
-            updateInputButton();
+            const kategoriSelect = document.getElementById('filter_kategori');
+            const filterButtons = document.querySelector('.filter-buttons');
+            
+            // Buat input button
+            const inputBtn = document.createElement('a');
+            inputBtn.className = 'input-btn';
+            inputBtn.textContent = 'Input';
+            inputBtn.title = 'Setup scorecard untuk kategori yang dipilih';
+            
+            // Masukkan button setelah filter button
+            filterButtons.appendChild(inputBtn);
+            
+            // Function untuk toggle button
+            function toggleInputButton() {
+                const selectedKategori = kategoriSelect.value;
+                
+                if (selectedKategori && selectedKategori !== '') {
+                    inputBtn.href = `?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=${selectedKategori}`;
+                    inputBtn.style.display = 'inline-block';
+                } else {
+                    inputBtn.style.display = 'none';
+                }
+            }
+            
+            // Event listener untuk perubahan kategori
+            kategoriSelect.addEventListener('change', toggleInputButton);
+            
+            // Check initial state
+            toggleInputButton();
         });
 
-        // Payment Modal Functions
+        // Fungsi untuk menampilkan modal bukti pembayaran
         function showPaymentModal(namaPeserta, fileName) {
             const modal = document.getElementById('paymentModal');
             const modalTitle = document.getElementById('modal-title');
@@ -3184,10 +2631,12 @@ foreach ($pesertaList as $peserta) {
             
             modalTitle.textContent = 'Bukti Pembayaran - ' + namaPeserta;
             
+            // Cek ekstensi file untuk menentukan cara menampilkan
             const fileExtension = fileName.toLowerCase().split('.').pop();
             const imagePath = 'uploads/pembayaran/' + fileName;
             
             if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+                // Tampilkan sebagai gambar
                 imageContainer.innerHTML = `
                     <img src="${imagePath}" alt="Bukti Pembayaran" style="max-width: 100%; max-height: 500px; border-radius: 8px;">
                     <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #666;">
@@ -3196,13 +2645,18 @@ foreach ($pesertaList as $peserta) {
                     </div>
                 `;
             } else if (fileExtension === 'pdf') {
+                // Tampilkan link download untuk PDF
                 imageContainer.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
                         <div style="font-size: 48px; color: #dc3545; margin-bottom: 20px;">📄</div>
                         <h4>File PDF</h4>
                         <p style="margin: 15px 0; color: #666;">File bukti pembayaran dalam format PDF</p>
-                        <a href="${imagePath}" target="_blank" class="btn btn-primary" style="margin: 10px;">Buka PDF</a>
-                        <a href="${imagePath}" download="${fileName}" class="btn btn-success" style="margin: 10px;">Download</a>
+                        <a href="${imagePath}" target="_blank" class="btn btn-primary" style="margin: 10px;">
+                            Buka PDF
+                        </a>
+                        <a href="${imagePath}" download="${fileName}" class="btn btn-success" style="margin: 10px;">
+                            Download
+                        </a>
                         <div style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #666;">
                             <strong>File:</strong> ${fileName}<br>
                             <strong>Peserta:</strong> ${namaPeserta}
@@ -3210,13 +2664,18 @@ foreach ($pesertaList as $peserta) {
                     </div>
                 `;
             } else {
+                
                 imageContainer.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
                         <div style="font-size: 48px; color: #ffc107; margin-bottom: 20px;">⚠️</div>
                         <h4>File tidak dapat ditampilkan</h4>
                         <p style="margin: 15px 0; color: #666;">Format file tidak didukung untuk preview</p>
-                        <a href="${imagePath}" target="_blank" class="btn btn-primary" style="margin: 10px;">Buka File</a>
-                        <a href="${imagePath}" download="${fileName}" class="btn btn-success" style="margin: 10px;">Download</a>
+                        <a href="${imagePath}" target="_blank" class="btn btn-primary" style="margin: 10px;">
+                            Buka File
+                        </a>
+                        <a href="${imagePath}" download="${fileName}" class="btn btn-success" style="margin: 10px;">
+                            Download
+                        </a>
                         <div style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #666;">
                             <strong>File:</strong> ${fileName}<br>
                             <strong>Peserta:</strong> ${namaPeserta}
@@ -3228,10 +2687,12 @@ foreach ($pesertaList as $peserta) {
             modal.style.display = 'block';
         }
 
+        // Fungsi untuk menutup modal
         function closePaymentModal() {
             document.getElementById('paymentModal').style.display = 'none';
         }
 
+        // Tutup modal jika klik di luar area modal
         window.onclick = function(event) {
             const modal = document.getElementById('paymentModal');
             if (event.target == modal) {
@@ -3239,14 +2700,13 @@ foreach ($pesertaList as $peserta) {
             }
         }
 
+        // Tutup modal dengan tombol ESC
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 closePaymentModal();
             }
         });
     </script>
-</body>
-</html>
-<?php
-$conn->close();
-?>
+    <?php
+    $conn->close();
+    ?>

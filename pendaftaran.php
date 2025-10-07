@@ -1,5 +1,7 @@
 <?php
 // Aktifkan error reporting untuk debugging
+include 'check_access.php';
+requireLogin();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 

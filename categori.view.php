@@ -1,5 +1,7 @@
 <?php
 include 'panggil.php';
+include 'check_access.php';
+requireAdmin();
 
 // Handle CRUD operations
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {

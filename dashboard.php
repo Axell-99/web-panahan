@@ -1,6 +1,8 @@
 <?php
 // PASTIKAN SESSION CHECK ADA DI PALING ATAS
 include 'panggil.php';
+include 'check_access.php';
+requireAdmin();
 
 // Redirect ke login jika belum login
 if (!isset($_SESSION['login']) || $_SESSION['login'] !== true) {

@@ -2,7 +2,7 @@
 // check_access.php
 // File ini digunakan untuk mengecek akses user berdasarkan role
 
-session_start();
+// Tidak perlu session_start() karena sudah ada di panggil.php
 
 // Fungsi untuk cek apakah user sudah login
 function isLoggedIn() {

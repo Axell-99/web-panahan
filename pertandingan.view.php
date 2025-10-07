@@ -1,4 +1,6 @@
 <?php
+include 'check_access.php';
+requireAdmin();
 // Check if panggil.php exists and includes proper database connection
 if (!file_exists('panggil.php')) {
     die("Error: panggil.php file not found!");

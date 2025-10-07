@@ -1,7 +1,14 @@
 <?php
 include 'panggil.php';
+include 'check_access.php';
+requireAdmin();
 
 $result = $conn->query("SELECT * FROM users ORDER BY id ASC");
+
+if($_SESSION['role']  != 'admin') {
+    header('Location: kegiatan.view.php');
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -320,6 +327,12 @@ $result = $conn->query("SELECT * FROM users ORDER BY id ASC");
                         <th>
                             <i class="fas fa-envelope me-1"></i>Email Address
                         </th>
+                        <th>
+                            <i class="fas fa-envelope me-1"></i>Role
+                        </th>
+                        <th>
+                            <i class="fas fa-envelope me-1"></i>Status
+                        </th>
                         <th style="width: 200px;">
                             <i class="fas fa-cogs me-1"></i>Actions
                         </th>
@@ -346,6 +359,12 @@ $result = $conn->query("SELECT * FROM users ORDER BY id ASC");
                         </td>
                         <td>
                             <span class="text-muted"><?= htmlspecialchars($row['email']); ?></span>
+                        </td>
+                        <td>
+                            <span class="text-muted"><?= htmlspecialchars($row['role']); ?></span>
+                        </td>
+                        <td>
+                            <span class="text-muted"><?= htmlspecialchars($row['status']); ?></span>
                         </td>
                         <td>
                             <div class="action-buttons">
@@ -409,6 +428,5 @@ $result = $conn->query("SELECT * FROM users ORDER BY id ASC");
         });
     });
 </script>
-
 </body>
 </html>

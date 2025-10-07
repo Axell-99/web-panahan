@@ -1,5 +1,7 @@
 <?php
 include 'panggil.php';
+include 'check_access.php';
+requireAdmin();
 
 // Get tournament ID from URL
 $tournament_id = isset($_GET['tournament_id']) ? intval($_GET['tournament_id']) : 0;
