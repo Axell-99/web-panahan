@@ -1,9 +1,9 @@
 <?php
+session_start(); 
 include 'panggil.php';
-
 // Cek jika sudah login
 if (isset($_SESSION['login']) && $_SESSION['login'] === true) {
-    if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+    if ($_SESSION['role'] === 'admin') {
         header('Location: dashboard.php');
     } else {
         header('Location: kegiatan.view.php');

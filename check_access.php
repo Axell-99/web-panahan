@@ -14,13 +14,13 @@ function isAdmin() {
     return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
 }
 
-// Fungsi untuk redirect jika belum login
-function requireLogin() {
-    if (!isLoggedIn()) {
-        header('Location: index.php');
-        exit;
+    // Fungsi untuk redirect jika belum login
+    function requireLogin() {
+        if (!isLoggedIn()) {
+            header('Location: index.php');
+            exit;
+        }
     }
-}
 
 // Fungsi untuk redirect jika bukan admin
 function requireAdmin() {
