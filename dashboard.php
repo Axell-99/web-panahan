@@ -403,6 +403,7 @@ $role = $_SESSION['role'] ?? 'user';
 
                 <button class="menu-btn"><a href="kegiatan.view.php">📅 Kegiatan</a></button>
                 <button class="menu-btn"><a href="peserta.view.php">👨‍👩‍👧‍👦 Peserta</a></button>
+                <button class="menu-btn"><a href="statistik.php">📝 Statistik</a></button>
             </div>
 
             <div class="logout-section">

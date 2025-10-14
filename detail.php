@@ -29,6 +29,106 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
         die("Parameter tidak lengkap.");
     }
 
+    // Handler untuk menyimpan hasil match
+    if (isset($_POST['save_match_result'])) {
+        header('Content-Type: application/json');
+        
+        $match_id = $_POST['match_id'] ?? '';
+        $winner_id = intval($_POST['winner_id'] ?? 0);
+        $loser_id = intval($_POST['loser_id'] ?? 0);
+        $bracket_size = intval($_POST['bracket_size'] ?? 0);
+        
+        try {
+            // Check if match result already exists
+            $checkQuery = "SELECT id FROM bracket_matches WHERE kegiatan_id = ? AND category_id = ? AND scoreboard_id = ? AND match_id = ?";
+            $checkStmt = $conn->prepare($checkQuery);
+            $checkStmt->bind_param("iiis", $kegiatan_id, $category_id, $scoreboard_id, $match_id);
+            $checkStmt->execute();
+            $checkResult = $checkStmt->get_result();
+            
+            if ($checkResult->num_rows > 0) {
+                // Update existing record
+                $updateQuery = "UPDATE bracket_matches SET winner_id = ?, loser_id = ?, updated_at = NOW() WHERE kegiatan_id = ? AND category_id = ? AND scoreboard_id = ? AND match_id = ?";
+                $updateStmt = $conn->prepare($updateQuery);
+                $updateStmt->bind_param("iiiiss", $winner_id, $loser_id, $kegiatan_id, $category_id, $scoreboard_id, $match_id);
+                $updateStmt->execute();
+                $updateStmt->close();
+            } else {
+                // Insert new record
+                $insertQuery = "INSERT INTO bracket_matches (kegiatan_id, category_id, scoreboard_id, match_id, winner_id, loser_id, bracket_size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+                $insertStmt = $conn->prepare($insertQuery);
+                $insertStmt->bind_param("iiisiii", $kegiatan_id, $category_id, $scoreboard_id, $match_id, $winner_id, $loser_id, $bracket_size);
+                $insertStmt->execute();
+                $insertStmt->close();
+            }
+            
+            $checkStmt->close();
+            
+            echo json_encode(['status' => 'success', 'message' => 'Match result saved']);
+        } catch (Exception $e) {
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+        
+        $conn->close();
+        exit;
+    }
+
+    // Handler untuk menyimpan champion
+    if (isset($_POST['save_champion'])) {
+        header('Content-Type: application/json');
+        
+        $champion_id = intval($_POST['champion_id'] ?? 0);
+        $runner_up_id = intval($_POST['runner_up_id'] ?? 0);
+        $third_place_id = !empty($_POST['third_place_id']) ? intval($_POST['third_place_id']) : null;
+        $bracket_size = intval($_POST['bracket_size'] ?? 0);
+        
+        try {
+            // Check if champion record already exists
+            $checkQuery = "SELECT id FROM bracket_champions WHERE kegiatan_id = ? AND category_id = ? AND scoreboard_id = ?";
+            $checkStmt = $conn->prepare($checkQuery);
+            $checkStmt->bind_param("iii", $kegiatan_id, $category_id, $scoreboard_id);
+            $checkStmt->execute();
+            $checkResult = $checkStmt->get_result();
+            
+            if ($checkResult->num_rows > 0) {
+                // Update existing record
+                if ($third_place_id !== null) {
+                    $updateQuery = "UPDATE bracket_champions SET champion_id = ?, runner_up_id = ?, third_place_id = ?, bracket_size = ?, updated_at = NOW() WHERE kegiatan_id = ? AND category_id = ? AND scoreboard_id = ?";
+                    $updateStmt = $conn->prepare($updateQuery);
+                    $updateStmt->bind_param("iiiiii", $champion_id, $runner_up_id, $third_place_id, $bracket_size, $kegiatan_id, $category_id, $scoreboard_id);
+                } else {
+                    $updateQuery = "UPDATE bracket_champions SET champion_id = ?, runner_up_id = ?, bracket_size = ?, updated_at = NOW() WHERE kegiatan_id = ? AND category_id = ? AND scoreboard_id = ?";
+                    $updateStmt = $conn->prepare($updateQuery);
+                    $updateStmt->bind_param("iiiiii", $champion_id, $runner_up_id, $bracket_size, $kegiatan_id, $category_id, $scoreboard_id);
+                }
+                $updateStmt->execute();
+                $updateStmt->close();
+            } else {
+                // Insert new record
+                if ($third_place_id !== null) {
+                    $insertQuery = "INSERT INTO bracket_champions (kegiatan_id, category_id, scoreboard_id, champion_id, runner_up_id, third_place_id, bracket_size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+                    $insertStmt = $conn->prepare($insertQuery);
+                    $insertStmt->bind_param("iiiiiii", $kegiatan_id, $category_id, $scoreboard_id, $champion_id, $runner_up_id, $third_place_id, $bracket_size);
+                } else {
+                    $insertQuery = "INSERT INTO bracket_champions (kegiatan_id, category_id, scoreboard_id, champion_id, runner_up_id, bracket_size, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())";
+                    $insertStmt = $conn->prepare($insertQuery);
+                    $insertStmt->bind_param("iiiiii", $kegiatan_id, $category_id, $scoreboard_id, $champion_id, $runner_up_id, $bracket_size);
+                }
+                $insertStmt->execute();
+                $insertStmt->close();
+            }
+            
+            $checkStmt->close();
+            
+            echo json_encode(['status' => 'success', 'message' => 'Champion saved']);
+        } catch (Exception $e) {
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+        
+        $conn->close();
+        exit;
+    }
+
     // Ambil data kegiatan
     $kegiatanData = [];
     try {
@@ -126,7 +226,7 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Tournament Bracket - <?= htmlspecialchars($kategoriData['name']) ?></title>
+        <title>Tournament Eliminasi / Aduan <?= htmlspecialchars($kategoriData['name']) ?></title>
         <style>
             * {
                 margin: 0;
@@ -233,6 +333,7 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
             .generate-btn:disabled {
                 opacity: 0.5;
                 cursor: not-allowed;
+                transform: none;
             }
 
             .bracket-container {
@@ -240,6 +341,39 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
                 margin-top: 30px;
                 overflow-x: auto;
                 padding: 20px;
+            }
+
+            .third-place-container {
+                background: rgba(205, 127, 50, 0.15);
+                border: 2px solid rgba(205, 127, 50, 0.5);
+                border-radius: 15px;
+                padding: 30px;
+                margin-top: 40px;
+                text-align: center;
+                display: none;
+                max-width: 500px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .third-place-title {
+                font-size: 24px;
+                font-weight: 700;
+                color: #cd7f32;
+                margin-bottom: 25px;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+
+            .third-place-bracket {
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 12px;
+                padding: 20px;
+                display: inline-block;
+                min-width: 400px;
             }
 
             .bracket {
@@ -283,7 +417,7 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
                 border: 3px solid transparent;
             }
 
-            .player:hover {
+            .player:hover:not(.empty) {
                 transform: translateX(5px);
                 box-shadow: 0 5px 15px rgba(255, 165, 2, 0.4);
             }
@@ -297,11 +431,6 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
                 background: rgba(255, 255, 255, 0.1);
                 color: #666;
                 cursor: default;
-            }
-
-            .player.empty:hover {
-                transform: none;
-                box-shadow: none;
             }
 
             .final-winner {
@@ -354,14 +483,14 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
             <a href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>" class="back-btn">← Kembali</a>
 
             <div class="header">
-                <h1>Tournament Bracket</h1>
+                <h1>Tournament Eliminasi / Aduan</h1>
                 <h3><?= htmlspecialchars($kategoriData['name']) ?></h3>
                 <p><?= htmlspecialchars($kegiatanData['nama_kegiatan']) ?></p>
                 <p style="margin-top: 10px; color: #74b9ff;">Total Peserta: <?= count($pesertaList) ?> orang</p>
             </div>
 
             <div class="setup-container" id="setupContainer">
-                <h2>Pilih Jumlah Peserta Bracket</h2>
+                <h2>Pilih Jumlah Peserta Eliminasi / Aduan</h2>
                 
                 <div class="bracket-size-options">
                     <button class="size-option" onclick="selectBracketSize(16)" id="size16">16</button>
@@ -369,28 +498,45 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
                 </div>
 
                 <p class="info-text">
-                    Pilih jumlah peserta untuk sistem bracket tournament
+                    Pilih jumlah peserta untuk Eliminasi / Aduan
                 </p>
 
                 <button class="generate-btn" id="startBracketBtn" onclick="startBracket()" disabled style="margin-top: 30px;">
-                    🏆 Masuk ke Bracket
+                    🏆 Masuk ke Eliminasi / Aduan
                 </button>
             </div>
 
             <div class="bracket-container" id="bracketContainer">
                 <div style="text-align: center; margin-bottom: 30px;">
                     <button class="generate-btn" id="generateBtn" onclick="generateBracket()">
-                        🎲 Generate & Acak Bracket
+                        🎲 Generate & Acak Eliminasi / Aduan
                     </button>
                     <button class="generate-btn" onclick="backToSetup()" style="background: linear-gradient(135deg, #636e72 0%, #2d3436 100%); margin-left: 10px;">
-                        ← Kembali ke Setup
+                        ← Kembali
                     </button>
                     <p class="info-text" style="margin-top: 15px;">
-                        Klik tombol "Generate & Acak Bracket" untuk mengacak posisi peserta secara random
+                        Klik tombol "Generate & Acak Eliminasi / Aduan" untuk mengacak posisi peserta secara random
                     </p>
                 </div>
+                
                 <div id="bracketContent">
                     <!-- Bracket akan di-generate di sini -->
+                </div>
+                
+                <div class="third-place-container" id="thirdPlaceSection">
+                    <div class="third-place-title">
+                        <span>🥉</span>
+                        <span>PEREBUTAN JUARA 3</span>
+                        <span>🥉</span>
+                    </div>
+                    <div class="third-place-bracket">
+                        <div id="thirdPlaceMatch">
+                            <div class="match">
+                                <div class="player empty">Menunggu Semifinal</div>
+                                <div class="player empty">Menunggu Semifinal</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -399,18 +545,17 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
             const pesertaData = <?= json_encode($pesertaList) ?>;
             let selectedSize = 0;
             let shuffledPeserta = [];
-            let bracketData = {}; // Menyimpan data bracket
+            let bracketData = {};
+            let semifinalLosers = [];
 
             function selectBracketSize(size) {
                 selectedSize = size;
                 
-                // Update UI button selection
                 document.querySelectorAll('.size-option').forEach(btn => {
                     btn.classList.remove('active');
                 });
                 document.getElementById('size' + size).classList.add('active');
                 
-                // Enable tombol masuk bracket
                 document.getElementById('startBracketBtn').disabled = false;
             }
 
@@ -425,11 +570,9 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
                     return;
                 }
 
-                // Hide setup, show bracket
                 document.getElementById('setupContainer').style.display = 'none';
                 document.getElementById('bracketContainer').style.display = 'block';
 
-                // Tampilkan placeholder bracket
                 showPlaceholderBracket();
             }
 
@@ -438,10 +581,12 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
                     document.getElementById('setupContainer').style.display = 'block';
                     document.getElementById('bracketContainer').style.display = 'none';
                     
-                    // Reset bracket content dan data
                     document.getElementById('bracketContent').innerHTML = '';
+                    document.getElementById('thirdPlaceMatch').innerHTML = '';
+                    document.getElementById('thirdPlaceSection').style.display = 'none';
                     bracketData = {};
                     shuffledPeserta = [];
+                    semifinalLosers = [];
                 }
             }
 
@@ -548,16 +693,14 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
                     return;
                 }
 
-                // Shuffle dan ambil peserta sesuai size
                 shuffledPeserta = shuffleArray(pesertaData).slice(0, selectedSize);
 
-                // Tambahkan BYE jika kurang
                 while (shuffledPeserta.length < selectedSize) {
                     shuffledPeserta.push({ id: null, nama_peserta: 'BYE', empty: true });
                 }
 
-                // Initialize bracket data
                 bracketData = {};
+                semifinalLosers = [];
                 shuffledPeserta.forEach((player, index) => {
                     bracketData[index] = {
                         player: player,
@@ -571,6 +714,8 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
                 } else {
                     generate32Bracket();
                 }
+                
+                document.getElementById('thirdPlaceSection').style.display = 'block';
             }
 
             function generate16Bracket() {
@@ -649,13 +794,15 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
                             <div class="player ${player1.empty ? 'empty' : ''}" 
                                  data-slot="${matchId}-1"
                                  data-player-index="${i}"
-                                 onclick="selectWinner('${matchId}', 1, ${i})">
+                                 data-player-id="${player1.id || ''}"
+                                 onclick="${player1.empty ? '' : `selectWinner('${matchId}', 1, ${i})`}">
                                 ${player1.nama_peserta}
                             </div>
                             <div class="player ${player2.empty ? 'empty' : ''}" 
                                  data-slot="${matchId}-2"
                                  data-player-index="${i + 1}"
-                                 onclick="selectWinner('${matchId}', 2, ${i + 1})">
+                                 data-player-id="${player2.id || ''}"
+                                 onclick="${player2.empty ? '' : `selectWinner('${matchId}', 2, ${i + 1})`}">
                                 ${player2.nama_peserta}
                             </div>
                         </div>
@@ -671,8 +818,8 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
                     const matchId = `${prefix}-m${i}`;
                     html += `
                         <div class="match" data-match="${matchId}">
-                            <div class="player empty" data-slot="${matchId}-1" onclick="selectWinnerNext('${matchId}', 1)">TBD</div>
-                            <div class="player empty" data-slot="${matchId}-2" onclick="selectWinnerNext('${matchId}', 2)">TBD</div>
+                            <div class="player empty" data-slot="${matchId}-1">TBD</div>
+                            <div class="player empty" data-slot="${matchId}-2">TBD</div>
                         </div>
                     `;
                 }
@@ -682,23 +829,18 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
             function selectWinner(matchId, slot, playerIndex) {
                 const player = shuffledPeserta[playerIndex];
                 
-                // Jangan bisa klik kalau BYE
                 if (player.empty) return;
 
-                // Ambil elemen match
                 const matchElement = document.querySelector(`[data-match="${matchId}"]`);
                 const player1Element = matchElement.querySelector(`[data-slot="${matchId}-1"]`);
                 const player2Element = matchElement.querySelector(`[data-slot="${matchId}-2"]`);
 
-                // Reset winner class
                 player1Element.classList.remove('winner');
                 player2Element.classList.remove('winner');
 
-                // Set winner
                 const winnerElement = slot === 1 ? player1Element : player2Element;
                 winnerElement.classList.add('winner');
 
-                // Tentukan next match
                 advanceWinner(matchId, player, playerIndex);
             }
 
@@ -706,36 +848,37 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
                 const matchElement = document.querySelector(`[data-match="${matchId}"]`);
                 const slotElement = matchElement.querySelector(`[data-slot="${matchId}-${slot}"]`);
                 
-                // Cek apakah slot sudah terisi
                 if (slotElement.classList.contains('empty')) {
                     alert('Pemain belum ditentukan untuk slot ini!');
                     return;
                 }
 
-                // Reset winner di match ini
                 const player1Element = matchElement.querySelector(`[data-slot="${matchId}-1"]`);
                 const player2Element = matchElement.querySelector(`[data-slot="${matchId}-2"]`);
                 player1Element.classList.remove('winner');
                 player2Element.classList.remove('winner');
 
-                // Set winner
                 slotElement.classList.add('winner');
 
-                // Ambil data pemain
                 const playerName = slotElement.textContent.trim();
                 const playerIndex = slotElement.getAttribute('data-player-index');
+                const playerId = slotElement.getAttribute('data-player-id');
                 
                 if (playerIndex) {
                     const player = shuffledPeserta[parseInt(playerIndex)];
                     advanceWinner(matchId, player, parseInt(playerIndex));
+                } else {
+                    const player = { 
+                        id: playerId, 
+                        nama_peserta: playerName 
+                    };
+                    advanceWinner(matchId, player, null);
                 }
             }
 
             function advanceWinner(matchId, player, playerIndex) {
-                // Tentukan next match berdasarkan match saat ini
                 let nextMatchId, nextSlot;
 
-                // Untuk bracket 16
                 if (matchId.startsWith('r16-m')) {
                     const matchNum = parseInt(matchId.split('m')[1]);
                     nextMatchId = `qf-m${Math.floor(matchNum / 2)}`;
@@ -746,39 +889,197 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
                     nextSlot = (matchNum % 2) + 1;
                 } else if (matchId.startsWith('sf-m')) {
                     const matchNum = parseInt(matchId.split('m')[1]);
+                    
+                    const matchElement = document.querySelector(`[data-match="${matchId}"]`);
+                    const player1Element = matchElement.querySelector(`[data-slot="${matchId}-1"]`);
+                    const player2Element = matchElement.querySelector(`[data-slot="${matchId}-2"]`);
+                    
+                    const loserElement = player1Element.classList.contains('winner') ? player2Element : player1Element;
+                    const loserName = loserElement.textContent.trim();
+                    const loserId = loserElement.getAttribute('data-player-id');
+                    
+                    if (loserName !== 'TBD' && !semifinalLosers.some(l => l.id === loserId)) {
+                        semifinalLosers.push({
+                            id: loserId,
+                            nama_peserta: loserName,
+                            index: loserElement.getAttribute('data-player-index')
+                        });
+                        
+                        updateThirdPlaceMatch();
+                    }
+                    
                     nextMatchId = 'final';
                     nextSlot = matchNum + 1;
-                }
-                // Untuk bracket 32
-                else if (matchId.startsWith('r32-m')) {
+                } else if (matchId.startsWith('r32-m')) {
                     const matchNum = parseInt(matchId.split('m')[1]);
                     nextMatchId = `r16-m${Math.floor(matchNum / 2)}`;
                     nextSlot = (matchNum % 2) + 1;
                 }
 
-                // Update next match
                 if (nextMatchId) {
                     const nextSlotElement = document.querySelector(`[data-slot="${nextMatchId}-${nextSlot}"]`);
                     if (nextSlotElement) {
                         nextSlotElement.textContent = player.nama_peserta;
                         nextSlotElement.classList.remove('empty');
-                        nextSlotElement.setAttribute('data-player-index', playerIndex);
+                        nextSlotElement.setAttribute('data-player-index', playerIndex !== null ? playerIndex : '');
+                        nextSlotElement.setAttribute('data-player-id', player.id || '');
                         
-                        // Jika ini adalah final dan ada pemenang
+                        nextSlotElement.onclick = function() { 
+                            selectWinnerNext(nextMatchId, nextSlot); 
+                        };
+                        
                         if (nextMatchId === 'final') {
                             const finalMatch = document.querySelector(`[data-match="final"]`);
                             const finalist1 = finalMatch.querySelector(`[data-slot="final-1"]`);
                             const finalist2 = finalMatch.querySelector(`[data-slot="final-2"]`);
                             
-                            // Cek apakah kedua finalist sudah terisi
                             if (!finalist1.classList.contains('empty') && !finalist2.classList.contains('empty')) {
-                                // Enable klik untuk memilih juara
-                                finalist1.onclick = function() { declareChampion(finalist1.textContent.trim()); };
-                                finalist2.onclick = function() { declareChampion(finalist2.textContent.trim()); };
+                                finalist1.onclick = function() { 
+                                    selectFinalWinner(1);
+                                };
+                                finalist2.onclick = function() { 
+                                    selectFinalWinner(2);
+                                };
                             }
                         }
                     }
                 }
+            }
+
+            function selectFinalWinner(slot) {
+                const finalMatch = document.querySelector(`[data-match="final"]`);
+                const finalist1 = finalMatch.querySelector(`[data-slot="final-1"]`);
+                const finalist2 = finalMatch.querySelector(`[data-slot="final-2"]`);
+                
+                if (finalist1.classList.contains('empty') || finalist2.classList.contains('empty')) {
+                    alert('Kedua finalist harus sudah ditentukan!');
+                    return;
+                }
+                
+                finalist1.classList.remove('winner');
+                finalist2.classList.remove('winner');
+                
+                const winnerElement = slot === 1 ? finalist1 : finalist2;
+                winnerElement.classList.add('winner');
+                
+                const championName = winnerElement.textContent.trim();
+                declareChampion(championName);
+            }
+
+            function updateThirdPlaceMatch() {
+                if (semifinalLosers.length === 2) {
+                    const thirdPlaceMatch = document.getElementById('thirdPlaceMatch');
+                    thirdPlaceMatch.innerHTML = `
+                        <div class="match" data-match="third-place" style="margin: 0 auto;">
+                            <div class="player" 
+                                 data-slot="third-1"
+                                 data-player-id="${semifinalLosers[0].id}"
+                                 data-player-index="${semifinalLosers[0].index}"
+                                 onclick="selectThirdPlace(0)"
+                                 style="background: linear-gradient(135deg, #cd7f32 0%, #b87333 100%); color: white;">
+                                ${semifinalLosers[0].nama_peserta}
+                            </div>
+                            <div class="player" 
+                                 data-slot="third-2"
+                                 data-player-id="${semifinalLosers[1].id}"
+                                 data-player-index="${semifinalLosers[1].index}"
+                                 onclick="selectThirdPlace(1)"
+                                 style="background: linear-gradient(135deg, #cd7f32 0%, #b87333 100%); color: white;">
+                                ${semifinalLosers[1].nama_peserta}
+                            </div>
+                        </div>
+                    `;
+                    
+                    console.log('Third place match updated:', semifinalLosers);
+                }
+            }
+
+            function selectThirdPlace(index) {
+                const matchElement = document.querySelector(`[data-match="third-place"]`);
+                if (!matchElement) {
+                    alert('Match element tidak ditemukan!');
+                    return;
+                }
+                
+                const player1Element = matchElement.querySelector(`[data-slot="third-1"]`);
+                const player2Element = matchElement.querySelector(`[data-slot="third-2"]`);
+                
+                if (!player1Element || !player2Element) {
+                    alert('Player elements tidak ditemukan!');
+                    return;
+                }
+                
+                player1Element.classList.remove('winner');
+                player2Element.classList.remove('winner');
+                
+                const winnerElement = index === 0 ? player1Element : player2Element;
+                const loserElement = index === 0 ? player2Element : player1Element;
+                winnerElement.classList.add('winner');
+                
+                const thirdPlaceWinner = semifinalLosers[index];
+                const thirdPlaceLoser = semifinalLosers[index === 0 ? 1 : 0];
+                
+                // Save to database
+                saveMatchResult('third-place', thirdPlaceWinner.id, thirdPlaceLoser.id);
+                
+                setTimeout(() => {
+                    alert('🥉 Juara 3: ' + thirdPlaceWinner.nama_peserta + '\n\nSelamat atas pencapaian luar biasa!');
+                }, 300);
+            }
+
+            function saveMatchResult(matchId, winnerId, loserId) {
+                if (!winnerId || !loserId) {
+                    console.log('Skipping save - missing IDs:', {matchId, winnerId, loserId});
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('save_match_result', '1');
+                formData.append('match_id', matchId);
+                formData.append('winner_id', winnerId);
+                formData.append('loser_id', loserId);
+                formData.append('kegiatan_id', <?= $kegiatan_id ?>);
+                formData.append('category_id', <?= $category_id ?>);
+                formData.append('scoreboard_id', <?= $scoreboard_id ?>);
+                formData.append('bracket_size', selectedSize);
+                
+                fetch('', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Match result saved:', data);
+                })
+                .catch(error => {
+                    console.error('Error saving match result:', error);
+                });
+            }
+
+            function saveChampion(championId, runnerUpId, thirdPlaceId) {
+                const formData = new FormData();
+                formData.append('save_champion', '1');
+                formData.append('champion_id', championId);
+                formData.append('runner_up_id', runnerUpId);
+                if (thirdPlaceId) {
+                    formData.append('third_place_id', thirdPlaceId);
+                }
+                formData.append('kegiatan_id', <?= $kegiatan_id ?>);
+                formData.append('category_id', <?= $category_id ?>);
+                formData.append('scoreboard_id', <?= $scoreboard_id ?>);
+                formData.append('bracket_size', selectedSize);
+                
+                fetch('', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Champion saved:', data);
+                })
+                .catch(error => {
+                    console.error('Error saving champion:', error);
+                });
             }
 
             function declareChampion(championName) {
@@ -786,9 +1087,46 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
                 championElement.textContent = '🏆 ' + championName + ' 🏆';
                 championElement.style.display = 'block';
                 
-                // Tambahkan efek confetti
+                // Get champion and runner-up IDs
+                const finalMatch = document.querySelector(`[data-match="final"]`);
+                const finalist1 = finalMatch.querySelector(`[data-slot="final-1"]`);
+                const finalist2 = finalMatch.querySelector(`[data-slot="final-2"]`);
+                
+                const championId = finalist1.classList.contains('winner') ? 
+                                  finalist1.getAttribute('data-player-id') : 
+                                  finalist2.getAttribute('data-player-id');
+                                  
+                const runnerUpId = finalist1.classList.contains('winner') ? 
+                                  finalist2.getAttribute('data-player-id') : 
+                                  finalist1.getAttribute('data-player-id');
+                
+                // Get third place if exists
+                let thirdPlaceId = null;
+                const thirdPlaceMatch = document.querySelector(`[data-match="third-place"]`);
+                if (thirdPlaceMatch) {
+                    const thirdWinner = thirdPlaceMatch.querySelector('.player.winner');
+                    if (thirdWinner) {
+                        thirdPlaceId = thirdWinner.getAttribute('data-player-id');
+                    }
+                }
+                
+                // Save to database
+                saveMatchResult('final', championId, runnerUpId);
+                saveChampion(championId, runnerUpId, thirdPlaceId);
+                
                 setTimeout(() => {
-                    alert('Selamat kepada juara: ' + championName + '! 🎉');
+                    let message = '🎉 Selamat kepada juara: ' + championName + '! 🎉';
+                    if (thirdPlaceId) {
+                        const thirdPlaceName = semifinalLosers.find(p => p.id == thirdPlaceId)?.nama_peserta;
+                        if (thirdPlaceName) {
+                            const runnerUpName = finalist1.classList.contains('winner') ? 
+                                                finalist2.textContent.trim() : 
+                                                finalist1.textContent.trim();
+                            message += '\n\n🥈 Juara 2: ' + runnerUpName;
+                            message += '\n🥉 Juara 3: ' + thirdPlaceName;
+                        }
+                    }
+                    alert(message);
                 }, 500);
             }
         </script>
@@ -797,6 +1135,7 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
     <?php
     exit;
 }
+
 
 // ============================================
 // HANDLER UNTUK SCORECARD SETUP
@@ -1540,6 +1879,299 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                     height: 30px;
                 }
             }
+            /* ============================================
+   TABLE WRAPPER STYLES
+   ============================================ */
+.table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 1rem 0;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 8px 24px rgba(22, 28, 37, 0.08);
+    padding: 0;
+}
+
+/* ============================================
+   STYLED TABLE - BASE STYLES
+   ============================================ */
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    font-size: 14px;
+    color: #1f2937;
+    min-width: 640px;
+    background: white;
+}
+
+/* ============================================
+   TABLE HEADER STYLES
+   ============================================ */
+.styled-table thead th {
+    text-align: left;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    border: none;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+.styled-table thead th:first-child {
+    border-radius: 12px 0 0 0;
+}
+
+.styled-table thead th:last-child {
+    border-radius: 0 12px 0 0;
+}
+
+/* ============================================
+   TABLE BODY STYLES
+   ============================================ */
+.styled-table tbody td {
+    padding: 14px 20px;
+    vertical-align: middle;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.styled-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.styled-table tbody tr:nth-child(even) {
+    background: rgba(102, 126, 234, 0.02);
+}
+
+.styled-table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.08);
+    transform: scale(1.01);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.styled-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ============================================
+   COLUMN SPECIFIC STYLES
+   ============================================ */
+
+/* Number column (first column) */
+.styled-table tbody td:first-child {
+    width: 64px;
+    text-align: center;
+    font-weight: 600;
+    color: #667eea;
+}
+
+/* Date column (second column) */
+.styled-table tbody td:nth-child(2) {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* Number columns (Jumlah Sesi & Anak Panah) */
+.styled-table tbody td:nth-child(3),
+.styled-table tbody td:nth-child(4) {
+    font-weight: 600;
+    color: #374151;
+}
+
+/* Actions column (last column) */
+.styled-table tbody td:last-child {
+    white-space: nowrap;
+}
+
+/* ============================================
+   BUTTON STYLES - BASE
+   ============================================ */
+.btn {
+    display: inline-block;
+    padding: 8px 14px;
+    font-size: 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    margin-right: 6px;
+    margin-bottom: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.btn:last-child {
+    margin-right: 0;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* ============================================
+   BUTTON STYLES - SPECIFIC COLORS
+   ============================================ */
+
+/* Ranking Button - Purple Gradient */
+.styled-table .btn:nth-child(1) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.styled-table .btn:nth-child(1):hover {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Detail Button - Blue Gradient */
+.styled-table .btn:nth-child(2) {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.styled-table .btn:nth-child(2):hover {
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+}
+
+/* Aduan Button - Green Gradient */
+.styled-table .btn:nth-child(3) {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: white;
+}
+
+.styled-table .btn:nth-child(3):hover {
+    box-shadow: 0 4px 12px rgba(67, 233, 123, 0.4);
+}
+
+/* Hapus Button - Pink/Yellow Gradient */
+.styled-table .btn:nth-child(4) {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: white;
+}
+
+.styled-table .btn:nth-child(4):hover {
+    box-shadow: 0 4px 12px rgba(250, 112, 154, 0.4);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 768px) {
+    .styled-table {
+        font-size: 13px;
+        min-width: 600px;
+    }
+    
+    .styled-table thead th,
+    .styled-table tbody td {
+        padding: 12px 16px;
+    }
+    
+    .btn {
+        padding: 6px 10px;
+        font-size: 11px;
+        margin-right: 4px;
+        margin-bottom: 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .styled-table {
+        font-size: 12px;
+        min-width: 500px;
+    }
+    
+    .styled-table thead th,
+    .styled-table tbody td {
+        padding: 10px 12px;
+    }
+    
+    .btn {
+        padding: 5px 8px;
+        font-size: 10px;
+    }
+}
+
+/* ============================================
+   ADDITIONAL UTILITY CLASSES
+   ============================================ */
+.table-container {
+    position: relative;
+    width: 100%;
+}
+
+.table-loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.table-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.table-empty::before {
+    content: "📋";
+    display: block;
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+/* ============================================
+   ANIMATION KEYFRAMES
+   ============================================ */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.styled-table tbody tr {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.styled-table tbody tr:nth-child(1) { animation-delay: 0.05s; }
+.styled-table tbody tr:nth-child(2) { animation-delay: 0.1s; }
+.styled-table tbody tr:nth-child(3) { animation-delay: 0.15s; }
+.styled-table tbody tr:nth-child(4) { animation-delay: 0.2s; }
+.styled-table tbody tr:nth-child(5) { animation-delay: 0.25s; }
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+@media print {
+    .table-wrapper {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .styled-table .btn {
+        display: none;
+    }
+    
+    .styled-table tbody tr:hover {
+        background: transparent;
+        transform: none;
+        box-shadow: none;
+    }
+}
         </style>
         
     </head>
@@ -1885,7 +2517,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
                     })
                     .catch(err => console.error(err));
                 }
-                
                 return 0;
             }
 
