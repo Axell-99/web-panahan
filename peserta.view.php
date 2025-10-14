@@ -3,6 +3,40 @@ include 'panggil.php';
 include 'check_access.php';
 requireAdmin();
 
+// Handle delete request
+if (isset($_POST['delete_id'])) {
+    $delete_id = intval($_POST['delete_id']);
+    
+    // Get bukti pembayaran file first to delete it
+    $stmt = $conn->prepare("SELECT bukti_pembayaran FROM peserta WHERE id = ?");
+    $stmt->bind_param("i", $delete_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $peserta_data = $result->fetch_assoc();
+    
+    if ($peserta_data) {
+        // Delete file if exists
+        if (!empty($peserta_data['bukti_pembayaran'])) {
+            $file_path = 'uploads/' . $peserta_data['bukti_pembayaran'];
+            if (file_exists($file_path)) {
+                unlink($file_path);
+            }
+        }
+        
+        // Delete from database
+        $stmt = $conn->prepare("DELETE FROM peserta WHERE id = ?");
+        $stmt->bind_param("i", $delete_id);
+        
+        if ($stmt->execute()) {
+            $success_message = "Data peserta berhasil dihapus!";
+        } else {
+            $error_message = "Gagal menghapus data peserta!";
+        }
+    } else {
+        $error_message = "Data peserta tidak ditemukan!";
+    }
+}
+
 // Handle export to Excel
 if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     // Set headers untuk download Excel
@@ -324,14 +358,6 @@ while ($row = $result->fetch_assoc()) {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .table tbody tr:last-child td:first-child {
-            border-bottom-left-radius: 20px;
-        }
-
-        .table tbody tr:last-child td:last-child {
-            border-bottom-right-radius: 20px;
-        }
-
         .badge {
             padding: 0.5rem 0.75rem;
             border-radius: 50px;
@@ -341,14 +367,6 @@ while ($row = $result->fetch_assoc()) {
             letter-spacing: 0.5px;
         }
 
-        .badge-gender {
-            font-size: 0.75rem;
-        }
-
-        .badge-status {
-            font-size: 0.7rem;
-        }
-
         .btn {
             border-radius: 12px;
             font-weight: 500;
@@ -356,6 +374,11 @@ while ($row = $result->fetch_assoc()) {
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.75rem;
         }
 
         .btn-filter {
@@ -368,6 +391,18 @@ while ($row = $result->fetch_assoc()) {
             background: linear-gradient(135deg, #5855eb 0%, #7c3aed 100%);
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color) 0%, #dc2626 100%);
+            border: none;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
         }
 
         .btn-outline-secondary {
@@ -487,7 +522,6 @@ while ($row = $result->fetch_assoc()) {
             text-overflow: ellipsis;
         }
 
-        /* Custom scrollbar */
         .table-responsive::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -503,22 +537,12 @@ while ($row = $result->fetch_assoc()) {
             border-radius: 10px;
         }
 
-        .text-info {
-            color: var(--accent-color) !important;
+        .alert {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .text-info:hover {
-            color: #0891b2 !important;
-        }
-
-        /* Modal untuk gambar */
-        .modal-body img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 10px;
-        }
-
-        /* Animation for loading */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -534,21 +558,8 @@ while ($row = $result->fetch_assoc()) {
             animation: fadeInUp 0.6s ease;
         }
 
-        .stats-card:nth-child(1) { animation-delay: 0.1s; }
-        .stats-card:nth-child(2) { animation-delay: 0.2s; }
-        .stats-card:nth-child(3) { animation-delay: 0.3s; }
-        .stats-card:nth-child(4) { animation-delay: 0.4s; }
-
         .action-buttons {
             margin-bottom: 2rem;
-        }
-
-        /* Dark mode support */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-                color: #e2e8f0;
-            }
         }
     </style>
 </head>
@@ -558,6 +569,21 @@ while ($row = $result->fetch_assoc()) {
         <h1><i class="fas fa-bow-arrow me-3"></i>Data Peserta Turnamen Panahan</h1>
         <p class="mb-0">Sistem Manajemen Peserta Turnamen</p>
     </div>
+
+    <!-- Alert Messages -->
+    <?php if (isset($success_message)): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i><?= $success_message ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+    
+    <?php if (isset($error_message)): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i><?= $error_message ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
 
     <!-- Action Buttons -->
     <div class="action-buttons d-flex justify-content-between align-items-center">
@@ -687,12 +713,13 @@ while ($row = $result->fetch_assoc()) {
                         <th>Kelas</th>
                         <th>No. HP</th>
                         <th>Status</th>
+                        <th style="width: 100px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                 <?php if (empty($peserta)): ?>
                     <tr>
-                        <td colspan="12" class="text-center text-muted py-4">
+                        <td colspan="13" class="text-center text-muted py-4">
                             <i class="fas fa-inbox fa-3x mb-3"></i><br>
                             Tidak ada data peserta yang ditemukan.
                         </td>
@@ -767,9 +794,13 @@ while ($row = $result->fetch_assoc()) {
                                         <a href="#" class="text-info" onclick="showImage('<?= htmlspecialchars($p['bukti_pembayaran']) ?>', '<?= htmlspecialchars($p['nama_peserta']) ?>')">
                                             <i class="fas fa-file-image me-1"></i>Lihat Bukti
                                         </a>
-                                        <br>
                                     </small>
                                 <?php endif; ?>
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?= $p['id'] ?>, '<?= htmlspecialchars($p['nama_peserta'], ENT_QUOTES) ?>')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -809,6 +840,43 @@ while ($row = $result->fetch_assoc()) {
     </div>
 </div>
 
+<!-- Modal Konfirmasi Hapus -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Konfirmasi Hapus
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-user-times fa-4x text-danger mb-3"></i>
+                    <h5>Apakah Anda yakin ingin menghapus peserta ini?</h5>
+                    <p class="text-muted mb-0">Nama Peserta:</p>
+                    <p class="fw-bold" id="deletePesertaName"></p>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Perhatian:</strong> Data yang dihapus tidak dapat dikembalikan!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Batal
+                </button>
+                <form method="POST" id="deleteForm" style="display: inline;">
+                    <input type="hidden" name="delete_id" id="deleteIdInput">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-2"></i>Ya, Hapus
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 <script>
 // Auto-submit form on select change untuk better UX
@@ -824,7 +892,16 @@ var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl)
 });
 
-// Function untuk menampilkan gambar dalam modal - diperbaiki berdasarkan contoh code
+// Function untuk konfirmasi hapus
+function confirmDelete(id, nama) {
+    document.getElementById('deleteIdInput').value = id;
+    document.getElementById('deletePesertaName').textContent = nama;
+    
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+
+// Function untuk menampilkan gambar dalam modal
 function showImage(filename, pesertaName) {
     const modal = new bootstrap.Modal(document.getElementById('imageModal'));
     const modalTitle = document.getElementById('imageModalLabel');
@@ -836,7 +913,6 @@ function showImage(filename, pesertaName) {
     
     // Cek ekstensi file untuk menentukan cara menampilkan
     const fileExtension = filename.toLowerCase().split('.').pop();
-    // Path disesuaikan dengan struktur folder uploads biasa
     const imagePath = 'uploads/' + filename;
     
     // Reset modal body
@@ -870,10 +946,10 @@ function showImage(filename, pesertaName) {
         
         // Test loading gambar dengan berbagai kemungkinan path
         const possiblePaths = [
-            'uploads/' + filename,           // Path standar
-            'uploads/bukti/' + filename,     // Jika ada subfolder bukti
-            'uploads/pembayaran/' + filename,// Jika ada subfolder pembayaran
-            filename                         // Langsung tanpa folder
+            'uploads/' + filename,
+            'uploads/bukti/' + filename,
+            'uploads/pembayaran/' + filename,
+            filename
         ];
         
         let pathIndex = 0;
@@ -1001,6 +1077,15 @@ document.querySelector('a[href*="export=excel"]').addEventListener('click', func
         e.preventDefault();
     }
 });
+
+// Auto dismiss alerts after 5 seconds
+setTimeout(function() {
+    var alerts = document.querySelectorAll('.alert');
+    alerts.forEach(function(alert) {
+        var bsAlert = new bootstrap.Alert(alert);
+        bsAlert.close();
+    });
+}, 5000);
 </script>
 </body>
 </html>
