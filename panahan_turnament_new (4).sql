@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Sep 25, 2025 at 03:55 PM
+-- Generation Time: Oct 14, 2025 at 01:27 AM
 -- Server version: 8.0.30
 -- PHP Version: 8.2.26
 
@@ -20,6 +20,44 @@ SET time_zone = "+00:00";
 --
 -- Database: `panahan_turnament_new`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `bracket_champions`
+--
+
+CREATE TABLE `bracket_champions` (
+  `id` int NOT NULL,
+  `kegiatan_id` int NOT NULL,
+  `category_id` int NOT NULL,
+  `scoreboard_id` int NOT NULL,
+  `champion_id` int NOT NULL,
+  `runner_up_id` int DEFAULT NULL,
+  `third_place_id` int DEFAULT NULL,
+  `bracket_size` int NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `bracket_matches`
+--
+
+CREATE TABLE `bracket_matches` (
+  `id` int NOT NULL,
+  `kegiatan_id` int NOT NULL,
+  `category_id` int NOT NULL,
+  `scoreboard_id` int NOT NULL,
+  `match_id` varchar(50) NOT NULL,
+  `winner_id` int DEFAULT NULL,
+  `loser_id` int DEFAULT NULL,
+  `bracket_size` int NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -65,6 +103,38 @@ INSERT INTO `categories` (`id`, `name`, `min_age`, `max_age`, `gender`, `max_par
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `elimination_results`
+--
+
+CREATE TABLE `elimination_results` (
+  `id` int NOT NULL,
+  `match_id` int NOT NULL,
+  `kegiatan_id` int NOT NULL,
+  `category_id` int NOT NULL,
+  `round_name` varchar(50) NOT NULL,
+  `participant1_id` int NOT NULL,
+  `participant2_id` int DEFAULT NULL,
+  `winner_id` int DEFAULT NULL,
+  `participant1_set1` int DEFAULT '0',
+  `participant1_set2` int DEFAULT '0',
+  `participant1_set3` int DEFAULT '0',
+  `participant1_set4` int DEFAULT '0',
+  `participant1_set5` int DEFAULT '0',
+  `participant2_set1` int DEFAULT '0',
+  `participant2_set2` int DEFAULT '0',
+  `participant2_set3` int DEFAULT '0',
+  `participant2_set4` int DEFAULT '0',
+  `participant2_set5` int DEFAULT '0',
+  `participant1_set_points` int DEFAULT '0',
+  `participant2_set_points` int DEFAULT '0',
+  `is_completed` tinyint DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `kegiatan`
 --
 
@@ -83,7 +153,8 @@ INSERT INTO `kegiatan` (`id`, `nama_kegiatan`) VALUES
 (7, 'pp'),
 (9, 'testi'),
 (11, 'Panahan 2025'),
-(12, 'Latihan Bersama Internal ');
+(12, 'Latihan Bersama Internal '),
+(13, 'Dewasa');
 
 -- --------------------------------------------------------
 
@@ -134,7 +205,9 @@ INSERT INTO `kegiatan_kategori` (`id`, `kegiatan_id`, `category_id`) VALUES
 (103, 11, 7),
 (104, 11, 12),
 (107, 12, 2),
-(108, 12, 3);
+(108, 12, 3),
+(109, 13, 2),
+(110, 13, 3);
 
 -- --------------------------------------------------------
 
@@ -182,12 +255,19 @@ INSERT INTO `matches` (`id`, `tournament_id`, `category_id`, `round_name`, `matc
 CREATE TABLE `match_results` (
   `id` int NOT NULL,
   `match_id` int NOT NULL,
-  `set_number` int NOT NULL,
-  `player1_score` int DEFAULT '0',
-  `player2_score` int DEFAULT '0',
-  `duration_minutes` int DEFAULT NULL,
-  `notes` text COLLATE utf8mb4_general_ci
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `winner_id` int NOT NULL,
+  `loser_id` int DEFAULT NULL,
+  `score1` int DEFAULT '0',
+  `score2` int DEFAULT '0',
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `match_results`
+--
+
+INSERT INTO `match_results` (`id`, `match_id`, `winner_id`, `loser_id`, `score1`, `score2`, `updated_at`) VALUES
+(1, 4, 18, 19, 4, 1, '2025-10-02 01:23:16');
 
 -- --------------------------------------------------------
 
@@ -339,7 +419,37 @@ INSERT INTO `peserta` (`id`, `nama_peserta`, `tanggal_lahir`, `jenis_kelamin`, `
 (86, 'Mila', '2022-03-09', 'Perempuan', 'Samarinda', 'Gold Archery Samarinda', '-', '-', '08771219211', '20250925080347_68d4f76324674.jpeg', 3, 12),
 (87, 'Widya', '2025-09-03', 'Perempuan', 'Samarinda', 'Gold Archery Samarinda', '-', '-', '0812345161', '20250925080419_68d4f783a6f27.jpeg', 3, 12),
 (88, 'Wida', '2025-09-04', 'Perempuan', 'Samarinda', 'Gold Archery Samarinda', '-', '-', '08123456789', '20250925080447_68d4f79f41067.jpeg', 3, 12),
-(89, 'Zulfa', '2025-09-18', 'Perempuan', 'Samarinda', 'Gold Archery Samarinda', '-', '-', '08123456789', '20250925080518_68d4f7bee21d2.jpeg', 3, 12);
+(89, 'Zulfa', '2025-09-18', 'Perempuan', 'Samarinda', 'Gold Archery Samarinda', '-', '-', '08123456789', '20250925080518_68d4f7bee21d2.jpeg', 3, 12),
+(90, 'Syam', '2025-09-02', 'Laki-laki', 'Samarinda', 'Gold Archery Samarinda', '-', '-', '0812334411', '20251012221319_68ec27ff5be59.png', 2, 11),
+(91, 'Burhan', '2024-02-28', 'Laki-laki', 'Samarinda', 'Gold Archery Samarinda', '-', '-', '0821128311', '20251013012841_68ec55c9a2fcd.png', 2, 11),
+(92, 'Aldi', '2025-09-10', 'Laki-laki', 'Samarinda', 'Gold Archery Samarinda', '-', '-', '0812334411', '20251013014123_68ec58c3e8acb.png', 2, 13),
+(93, 'Test', '2004-03-10', 'Laki-laki', 'Samarinda', 'Gold Archery Samarinda', '-', '-', '0821128311', '20251014012145_68eda5a91cc51.png', 2, 12);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `qualification_scores`
+--
+
+CREATE TABLE `qualification_scores` (
+  `id` int NOT NULL,
+  `peserta_id` int NOT NULL,
+  `kegiatan_id` int NOT NULL,
+  `category_id` int NOT NULL,
+  `rambahan` int DEFAULT '1',
+  `series_1` int DEFAULT '0',
+  `series_2` int DEFAULT '0',
+  `series_3` int DEFAULT '0',
+  `series_4` int DEFAULT '0',
+  `series_5` int DEFAULT '0',
+  `series_6` int DEFAULT '0',
+  `total_score` int DEFAULT '0',
+  `total_x` int DEFAULT '0',
+  `total_10` int DEFAULT '0',
+  `ranking` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -849,7 +959,146 @@ INSERT INTO `score` (`id`, `category_id`, `kegiatan_id`, `peserta_id`, `score`, 
 (527, 2, 12, 76, '5', '1', '3', 16),
 (528, 2, 12, 76, 'x', '2', '1', 16),
 (529, 2, 12, 76, 'm', '2', '2', 16),
-(530, 2, 12, 76, 'x', '2', '3', 16);
+(530, 2, 12, 76, 'x', '2', '3', 16),
+(532, 2, 12, 76, '9', '1', '1', 16),
+(535, 2, 12, 76, 'x', '3', '1', 16),
+(536, 2, 12, 76, 'x', '3', '2', 16),
+(537, 2, 12, 76, 'x', '3', '3', 16),
+(538, 2, 12, 74, 'x', '1', '1', 16),
+(539, 2, 12, 74, 'x', '1', '2', 16),
+(540, 2, 12, 74, 'x', '1', '3', 16),
+(541, 2, 12, 74, 'x', '2', '1', 16),
+(542, 2, 12, 74, 'x', '2', '2', 16),
+(543, 2, 12, 74, 'x', '2', '3', 16),
+(544, 2, 12, 74, 'x', '3', '1', 16),
+(545, 2, 12, 74, 'x', '3', '2', 16),
+(546, 2, 12, 74, 'x', '3', '3', 16),
+(547, 2, 12, 74, 'x', '4', '1', 16),
+(548, 2, 12, 74, 'x', '4', '2', 16),
+(549, 2, 12, 74, 'x', '4', '3', 16),
+(550, 2, 12, 74, 'x', '5', '1', 16),
+(551, 2, 12, 74, 'x', '5', '2', 16),
+(552, 2, 12, 74, 'x', '5', '3', 16),
+(553, 2, 12, 74, 'x', '6', '1', 16),
+(554, 2, 12, 74, 'x', '6', '2', 16),
+(555, 2, 12, 74, 'x', '6', '3', 16),
+(556, 2, 12, 74, 'x', '7', '1', 16),
+(557, 2, 12, 74, 'x', '7', '2', 16),
+(558, 2, 12, 74, 'x', '7', '3', 16),
+(559, 2, 12, 74, 'x', '8', '1', 16),
+(560, 2, 12, 74, 'x', '8', '2', 16),
+(561, 2, 12, 74, 'x', '8', '3', 16),
+(562, 2, 12, 74, 'x', '9', '1', 16),
+(563, 2, 12, 74, '10', '9', '2', 16),
+(564, 2, 12, 74, '10', '9', '3', 16),
+(565, 2, 12, 77, '10', '1', '1', 16),
+(566, 2, 12, 77, '10', '1', '2', 16),
+(567, 2, 12, 77, '10', '1', '3', 16),
+(568, 2, 12, 77, '10', '2', '1', 16),
+(569, 2, 12, 77, '10', '2', '2', 16),
+(570, 2, 12, 77, '10', '2', '3', 16),
+(571, 2, 12, 77, '10', '3', '1', 16),
+(572, 2, 12, 77, '10', '3', '2', 16),
+(573, 2, 12, 77, '10', '3', '3', 16),
+(574, 2, 12, 77, '10', '4', '1', 16),
+(575, 2, 12, 77, '10', '4', '2', 16),
+(576, 2, 12, 77, '10', '4', '3', 16),
+(577, 2, 12, 77, '10', '5', '1', 16),
+(578, 2, 12, 77, '10', '5', '2', 16),
+(579, 2, 12, 77, '10', '5', '3', 16),
+(580, 2, 12, 77, '10', '6', '1', 16),
+(581, 2, 12, 77, '10', '6', '2', 16),
+(582, 2, 12, 77, '10', '6', '3', 16),
+(583, 2, 12, 77, '10', '7', '1', 16),
+(584, 2, 12, 77, '10', '7', '2', 16),
+(585, 2, 12, 77, '10', '7', '3', 16),
+(586, 2, 12, 77, '10', '8', '1', 16),
+(587, 2, 12, 77, '10', '8', '2', 16),
+(588, 2, 12, 77, '10', '8', '3', 16),
+(589, 2, 12, 77, '10', '9', '1', 16),
+(590, 2, 12, 77, '10', '9', '2', 16),
+(591, 2, 12, 77, '10', '9', '3', 16),
+(592, 2, 12, 76, 'x', '1', '1', 18),
+(593, 2, 12, 76, 'x', '1', '2', 18),
+(594, 2, 12, 76, 'x', '1', '3', 18),
+(595, 2, 12, 76, 'x', '2', '1', 18),
+(596, 2, 12, 76, 'x', '2', '2', 18),
+(597, 2, 12, 76, 'x', '2', '3', 18),
+(598, 2, 12, 76, 'x', '3', '1', 18),
+(599, 2, 12, 76, 'x', '3', '2', 18),
+(600, 2, 12, 76, 'x', '3', '3', 18),
+(601, 2, 12, 76, 'x', '4', '1', 18),
+(602, 2, 12, 76, 'x', '4', '2', 18),
+(603, 2, 12, 76, 'x', '4', '3', 18),
+(604, 2, 12, 76, 'x', '5', '1', 18),
+(605, 2, 12, 76, 'x', '5', '2', 18),
+(606, 2, 12, 76, 'x', '5', '3', 18),
+(607, 2, 12, 76, 'x', '6', '1', 18),
+(608, 2, 12, 76, 'x', '6', '2', 18),
+(609, 2, 12, 76, 'x', '6', '3', 18),
+(610, 2, 12, 76, 'x', '7', '1', 18),
+(611, 2, 12, 76, 'x', '7', '2', 18),
+(612, 2, 12, 76, 'x', '7', '3', 18),
+(613, 2, 12, 76, 'x', '8', '1', 18),
+(614, 2, 12, 76, 'x', '8', '2', 18),
+(615, 2, 12, 76, 'x', '8', '3', 18),
+(616, 2, 12, 76, 'x', '9', '1', 18),
+(617, 2, 12, 76, 'x', '9', '2', 18),
+(618, 2, 12, 76, 'x', '9', '3', 18),
+(619, 2, 12, 77, 'x', '1', '1', 18),
+(620, 2, 12, 77, 'x', '1', '2', 18),
+(621, 2, 12, 77, 'x', '1', '3', 18),
+(622, 2, 12, 77, 'x', '2', '1', 18),
+(623, 2, 12, 77, 'x', '2', '2', 18),
+(624, 2, 12, 77, 'x', '2', '3', 18),
+(625, 2, 12, 77, 'x', '3', '1', 18),
+(626, 2, 12, 77, 'x', '3', '2', 18),
+(627, 2, 12, 77, 'x', '3', '3', 18),
+(628, 2, 12, 77, 'x', '4', '1', 18),
+(629, 2, 12, 77, 'x', '4', '2', 18),
+(630, 2, 12, 77, 'x', '4', '3', 18),
+(631, 2, 12, 77, 'x', '5', '1', 18),
+(632, 2, 12, 77, 'x', '5', '2', 18),
+(633, 2, 12, 77, 'x', '5', '3', 18),
+(634, 2, 12, 77, 'x', '6', '1', 18),
+(635, 2, 12, 77, 'x', '6', '2', 18),
+(636, 2, 12, 77, 'x', '6', '3', 18),
+(637, 2, 12, 77, 'x', '7', '1', 18),
+(638, 2, 12, 77, 'x', '7', '2', 18),
+(639, 2, 12, 77, 'x', '7', '3', 18),
+(640, 2, 12, 77, 'x', '8', '1', 18),
+(641, 2, 12, 77, 'x', '8', '2', 18),
+(642, 2, 12, 77, 'x', '8', '3', 18),
+(643, 2, 12, 77, 'x', '9', '1', 18),
+(644, 2, 12, 77, 'x', '9', '2', 18),
+(645, 2, 12, 77, '10', '9', '3', 18),
+(646, 3, 12, 85, 'x', '1', '1', 19),
+(647, 3, 12, 85, 'x', '1', '2', 19),
+(648, 3, 12, 85, 'x', '1', '3', 19),
+(649, 3, 12, 85, 'x', '2', '1', 19),
+(650, 3, 12, 85, 'x', '2', '2', 19),
+(651, 3, 12, 85, 'x', '2', '3', 19),
+(652, 3, 12, 85, 'x', '3', '1', 19),
+(653, 3, 12, 85, 'x', '3', '2', 19),
+(654, 3, 12, 85, 'x', '3', '3', 19),
+(655, 3, 12, 85, 'x', '4', '1', 19),
+(656, 3, 12, 85, 'x', '4', '2', 19),
+(657, 3, 12, 85, 'x', '4', '3', 19),
+(658, 3, 12, 85, 'x', '5', '1', 19),
+(659, 3, 12, 85, 'x', '5', '2', 19),
+(660, 3, 12, 85, 'x', '5', '3', 19),
+(661, 3, 12, 85, 'x', '6', '1', 19),
+(662, 3, 12, 85, 'x', '6', '2', 19),
+(663, 3, 12, 85, 'x', '6', '3', 19),
+(664, 3, 12, 85, 'x', '7', '1', 19),
+(665, 3, 12, 85, 'x', '7', '2', 19),
+(666, 3, 12, 85, 'x', '7', '3', 19),
+(667, 3, 12, 85, 'x', '8', '1', 19),
+(668, 3, 12, 85, 'x', '8', '2', 19),
+(669, 3, 12, 85, 'x', '8', '3', 19),
+(670, 3, 12, 85, 'x', '9', '1', 19),
+(671, 3, 12, 85, 'x', '9', '2', 19),
+(672, 3, 12, 85, 'x', '9', '3', 19);
 
 -- --------------------------------------------------------
 
@@ -878,7 +1127,11 @@ INSERT INTO `score_boards` (`id`, `kegiatan_id`, `category_id`, `jumlah_sesi`, `
 (13, 11, 2, 9, 3, '2025-09-25 21:09:43'),
 (14, 11, 2, 9, 3, '2025-09-25 21:32:24'),
 (15, 11, 2, 9, 3, '2025-09-25 23:20:43'),
-(16, 12, 2, 9, 3, '2025-09-25 23:43:17');
+(16, 12, 2, 9, 3, '2025-09-25 23:43:17'),
+(17, 11, 4, 9, 3, '2025-10-07 10:32:23'),
+(18, 12, 2, 9, 3, '2025-10-12 19:14:38'),
+(19, 12, 3, 9, 3, '2025-10-12 19:17:25'),
+(20, 13, 2, 9, 3, '2025-10-14 09:07:00');
 
 -- --------------------------------------------------------
 
@@ -1016,6 +1269,25 @@ INSERT INTO `tournament_participants` (`id`, `tournament_id`, `participant_id`, 
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `tournament_settings`
+--
+
+CREATE TABLE `tournament_settings` (
+  `id` int NOT NULL,
+  `kegiatan_id` int NOT NULL,
+  `category_id` int NOT NULL,
+  `stage` varchar(20) DEFAULT 'qualification',
+  `arrows_per_end` int DEFAULT '6',
+  `total_ends` int DEFAULT '6',
+  `distance` varchar(20) DEFAULT '70m',
+  `target_face` varchar(20) DEFAULT '122cm',
+  `elimination_format` varchar(20) DEFAULT 'set_system',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `users`
 --
 
@@ -1035,7 +1307,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `status`, `created_at`, `updated_at`) VALUES
-(11, 'yoga', 'yoga@gmail.com', '$2y$10$EwaVuikDfnmrlAwEZOjjy.NxISUnIuyTLbcG3e5tCHvgopM/CXjha', 'admin', 'active', '2025-09-10 06:05:31', '2025-09-10 06:05:31'),
+(11, 'yoga', 'yoga@gmail.com', '$2y$10$EwaVuikDfnmrlAwEZOjjy.NxISUnIuyTLbcG3e5tCHvgopM/CXjha', 'operator', 'active', '2025-09-10 06:05:31', '2025-10-07 07:10:04'),
 (13, 'untung', 'untung@gmail.com', '$2y$10$YvbeZ2P2YX/kwah4mh1fpO6OTtHwowAS5NbzuHHgwRXEwRYcKL4QC', 'admin', 'active', '2025-09-10 07:25:50', '2025-09-10 07:25:50'),
 (17, 'Admin', 'admin1@gmail.com', '$2y$10$bOQLGK.KPt8OKhSIZuvNJemueyldT.XwoidyDFhT9ANb5ivla6qXC', 'admin', 'active', '2025-09-10 07:31:42', '2025-09-10 07:31:42');
 
@@ -1044,10 +1316,42 @@ INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `status`, `creat
 --
 
 --
+-- Indexes for table `bracket_champions`
+--
+ALTER TABLE `bracket_champions`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_champion` (`kegiatan_id`,`category_id`,`scoreboard_id`),
+  ADD KEY `idx_kegiatan` (`kegiatan_id`),
+  ADD KEY `idx_category` (`category_id`),
+  ADD KEY `idx_scoreboard` (`scoreboard_id`),
+  ADD KEY `idx_champion` (`champion_id`),
+  ADD KEY `idx_runner_up` (`runner_up_id`),
+  ADD KEY `idx_third_place` (`third_place_id`);
+
+--
+-- Indexes for table `bracket_matches`
+--
+ALTER TABLE `bracket_matches`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_match` (`kegiatan_id`,`category_id`,`scoreboard_id`,`match_id`),
+  ADD KEY `idx_kegiatan` (`kegiatan_id`),
+  ADD KEY `idx_category` (`category_id`),
+  ADD KEY `idx_scoreboard` (`scoreboard_id`),
+  ADD KEY `idx_winner` (`winner_id`),
+  ADD KEY `idx_loser` (`loser_id`);
+
+--
 -- Indexes for table `categories`
 --
 ALTER TABLE `categories`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `elimination_results`
+--
+ALTER TABLE `elimination_results`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_match` (`match_id`);
 
 --
 -- Indexes for table `kegiatan`
@@ -1071,13 +1375,21 @@ ALTER TABLE `matches`
 -- Indexes for table `match_results`
 --
 ALTER TABLE `match_results`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_match` (`match_id`);
 
 --
 -- Indexes for table `peserta`
 --
 ALTER TABLE `peserta`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `qualification_scores`
+--
+ALTER TABLE `qualification_scores`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_qualification` (`peserta_id`,`kegiatan_id`,`category_id`,`rambahan`);
 
 --
 -- Indexes for table `score`
@@ -1104,6 +1416,13 @@ ALTER TABLE `tournament_participants`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `tournament_settings`
+--
+ALTER TABLE `tournament_settings`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_tournament` (`kegiatan_id`,`category_id`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -1114,22 +1433,40 @@ ALTER TABLE `users`
 --
 
 --
+-- AUTO_INCREMENT for table `bracket_champions`
+--
+ALTER TABLE `bracket_champions`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `bracket_matches`
+--
+ALTER TABLE `bracket_matches`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `categories`
 --
 ALTER TABLE `categories`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `elimination_results`
+--
+ALTER TABLE `elimination_results`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `kegiatan`
 --
 ALTER TABLE `kegiatan`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `kegiatan_kategori`
 --
 ALTER TABLE `kegiatan_kategori`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=109;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=111;
 
 --
 -- AUTO_INCREMENT for table `matches`
@@ -1141,25 +1478,31 @@ ALTER TABLE `matches`
 -- AUTO_INCREMENT for table `match_results`
 --
 ALTER TABLE `match_results`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `peserta`
 --
 ALTER TABLE `peserta`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=90;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=94;
+
+--
+-- AUTO_INCREMENT for table `qualification_scores`
+--
+ALTER TABLE `qualification_scores`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `score`
 --
 ALTER TABLE `score`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=531;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=673;
 
 --
 -- AUTO_INCREMENT for table `score_boards`
 --
 ALTER TABLE `score_boards`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `settings`
@@ -1171,6 +1514,12 @@ ALTER TABLE `settings`
 -- AUTO_INCREMENT for table `tournament_participants`
 --
 ALTER TABLE `tournament_participants`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `tournament_settings`
+--
+ALTER TABLE `tournament_settings`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
