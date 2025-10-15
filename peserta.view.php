@@ -3,6 +3,30 @@ include 'panggil.php';
 include 'check_access.php';
 requireAdmin();
 
+// Handle update request
+if (isset($_POST['update_id'])) {
+    $update_id = intval($_POST['update_id']);
+    $nama_peserta = $_POST['nama_peserta'];
+    $category_id = intval($_POST['category_id']);
+    $kegiatan_id = intval($_POST['kegiatan_id']);
+    $tanggal_lahir = $_POST['tanggal_lahir'];
+    $jenis_kelamin = $_POST['jenis_kelamin'];
+    $asal_kota = $_POST['asal_kota'];
+    $nama_club = $_POST['nama_club'];
+    $sekolah = $_POST['sekolah'];
+    $kelas = $_POST['kelas'];
+    $nomor_hp = $_POST['nomor_hp'];
+    
+    $stmt = $conn->prepare("UPDATE peserta SET nama_peserta=?, category_id=?, kegiatan_id=?, tanggal_lahir=?, jenis_kelamin=?, asal_kota=?, nama_club=?, sekolah=?, kelas=?, nomor_hp=? WHERE id=?");
+    $stmt->bind_param("siisssssssi", $nama_peserta, $category_id, $kegiatan_id, $tanggal_lahir, $jenis_kelamin, $asal_kota, $nama_club, $sekolah, $kelas, $nomor_hp, $update_id);
+    
+    if ($stmt->execute()) {
+        $success_message = "Data peserta berhasil diperbarui!";
+    } else {
+        $error_message = "Gagal memperbarui data peserta!";
+    }
+}
+
 // Handle delete request
 if (isset($_POST['delete_id'])) {
     $delete_id = intval($_POST['delete_id']);
@@ -405,6 +429,20 @@ while ($row = $result->fetch_assoc()) {
             box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
         }
 
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-color) 0%, #ea580c 100%);
+            border: none;
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+            color: white;
+        }
+
         .btn-outline-secondary {
             border: 2px solid var(--medium-gray);
             color: var(--text-light);
@@ -561,6 +599,28 @@ while ($row = $result->fetch_assoc()) {
         .action-buttons {
             margin-bottom: 2rem;
         }
+
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            border-bottom: none;
+            padding: 1.5rem 2rem;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-footer {
+            border-top: none;
+            padding: 1.5rem 2rem;
+        }
     </style>
 </head>
 <body>
@@ -713,7 +773,7 @@ while ($row = $result->fetch_assoc()) {
                         <th>Kelas</th>
                         <th>No. HP</th>
                         <th>Status</th>
-                        <th style="width: 100px;">Aksi</th>
+                        <th style="width: 150px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -798,7 +858,10 @@ while ($row = $result->fetch_assoc()) {
                                 <?php endif; ?>
                             </td>
                             <td class="text-center">
-                                <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?= $p['id'] ?>, '<?= htmlspecialchars($p['nama_peserta'], ENT_QUOTES) ?>')">
+                                <button type="button" class="btn btn-warning btn-sm me-1 mb-1" onclick="editPeserta(<?= htmlspecialchars(json_encode($p)) ?>)" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-danger btn-sm mb-1" onclick="confirmDelete(<?= $p['id'] ?>, '<?= htmlspecialchars($p['nama_peserta'], ENT_QUOTES) ?>')" title="Hapus">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </td>
@@ -815,6 +878,104 @@ while ($row = $result->fetch_assoc()) {
             <small class="text-muted">Menampilkan <?= count($peserta) ?> peserta</small>
         </div>
     <?php endif; ?>
+</div>
+
+<!-- Modal Edit Peserta -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="editModalLabel">
+                    <i class="fas fa-edit me-2"></i>Edit Data Peserta
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" id="editForm">
+                <div class="modal-body">
+                    <input type="hidden" name="update_id" id="edit_id">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nama Peserta <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="nama_peserta" id="edit_nama_peserta" required>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Kategori <span class="text-danger">*</span></label>
+                            <select class="form-select" name="category_id" id="edit_category_id" required>
+                                <option value="">Pilih Kategori</option>
+                                <?php foreach ($kategoriList as $kat): ?>
+                                    <option value="<?= $kat['id'] ?>"><?= htmlspecialchars($kat['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Kegiatan <span class="text-danger">*</span></label>
+                            <select class="form-select" name="kegiatan_id" id="edit_kegiatan_id" required>
+                                <option value="">Pilih Kegiatan</option>
+                                <?php foreach ($kegiatanList as $keg): ?>
+                                    <option value="<?= $keg['id'] ?>"><?= htmlspecialchars($keg['nama_kegiatan']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Tanggal Lahir <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="tanggal_lahir" id="edit_tanggal_lahir" required>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
+                            <select class="form-select" name="jenis_kelamin" id="edit_jenis_kelamin" required>
+                                <option value="">Pilih Jenis Kelamin</option>
+                                <option value="Laki-laki">Laki-laki</option>
+                                <option value="Perempuan">Perempuan</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Asal Kota</label>
+                            <input type="text" class="form-control" name="asal_kota" id="edit_asal_kota">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Nama Club</label>
+                            <input type="text" class="form-control" name="nama_club" id="edit_nama_club">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Sekolah</label>
+                            <input type="text" class="form-control" name="sekolah" id="edit_sekolah">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Kelas</label>
+                            <input type="text" class="form-control" name="kelas" id="edit_kelas">
+                        </div>
+                        
+                        <div class="col-md-12">
+                            <label class="form-label">Nomor HP</label>
+                            <input type="text" class="form-control" name="nomor_hp" id="edit_nomor_hp" placeholder="Contoh: 08123456789">
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <small><strong>Catatan:</strong> Field yang bertanda <span class="text-danger">*</span> wajib diisi.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-warning text-white">
+                        <i class="fas fa-save me-2"></i>Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <!-- Modal untuk menampilkan gambar -->
@@ -891,6 +1052,24 @@ var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'))
 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl)
 });
+
+// Function untuk edit peserta
+function editPeserta(data) {
+    document.getElementById('edit_id').value = data.id;
+    document.getElementById('edit_nama_peserta').value = data.nama_peserta || '';
+    document.getElementById('edit_category_id').value = data.category_id || '';
+    document.getElementById('edit_kegiatan_id').value = data.kegiatan_id || '';
+    document.getElementById('edit_tanggal_lahir').value = data.tanggal_lahir || '';
+    document.getElementById('edit_jenis_kelamin').value = data.jenis_kelamin || '';
+    document.getElementById('edit_asal_kota').value = data.asal_kota || '';
+    document.getElementById('edit_nama_club').value = data.nama_club || '';
+    document.getElementById('edit_sekolah').value = data.sekolah || '';
+    document.getElementById('edit_kelas').value = data.kelas || '';
+    document.getElementById('edit_nomor_hp').value = data.nomor_hp || '';
+    
+    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+    editModal.show();
+}
 
 // Function untuk konfirmasi hapus
 function confirmDelete(id, nama) {
