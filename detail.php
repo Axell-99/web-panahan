@@ -1314,574 +1314,412 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Setup Scorecard Panahan - <?= htmlspecialchars($kategoriData['name']) ?></title>
         <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: linear-gradient(135deg, #2D3436 0%, #636e72 100%);
-                min-height: 100vh;
-                padding: 20px;
-                color: white;
-            }
-
-            .container {
-                max-width: 1200px;
-                margin: 0 auto;
-            }
-
-            .back-btn {
-                background: rgba(255, 255, 255, 0.1);
-                border: none;
-                color: white;
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                margin-bottom: 20px;
-                transition: background 0.3s ease;
-                text-decoration: none;
-            }
-
-            .back-btn:hover {
-                background: rgba(255, 255, 255, 0.2);
-            }
-
-            .setup-form {
-                background: rgba(45, 52, 54, 0.95);
-                border-radius: 20px;
-                padding: 30px;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-                margin-bottom: 20px;
-            }
-
-            .header {
-                text-align: center;
-                margin-bottom: 30px;
-            }
-
-            .logo {
-                width: 60px;
-                height: 60px;
-                background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
-                border-radius: 15px;
-                margin: 0 auto 20px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 30px;
-            }
-
-            .title {
-                font-size: 20px;
-                font-weight: 600;
-                margin-bottom: 10px;
-            }
-
-            .subtitle {
-                font-size: 14px;
-                color: #ddd;
-            }
-
-            .category-info {
-                background: rgba(116, 185, 255, 0.1);
-                border: 1px solid rgba(116, 185, 255, 0.3);
-                border-radius: 12px;
-                padding: 15px;
-                margin-bottom: 25px;
-                text-align: center;
-            }
-
-            .category-name {
-                font-size: 16px;
-                font-weight: 600;
-                color: #74b9ff;
-                margin-bottom: 5px;
-            }
-
-            .event-name {
-                font-size: 14px;
-                color: #ddd;
-            }
-
-            .peserta-count {
-                font-size: 18px;
-                font-weight: 700;
-                color: #fdcb6e;
-                margin-top: 10px;
-            }
-
-            .form-group {
-                margin-bottom: 25px;
-            }
-
-            .form-label {
-                display: block;
-                font-size: 16px;
-                font-weight: 500;
-                margin-bottom: 10px;
-                color: #74b9ff;
-            }
-
-            .form-input {
-                width: 100%;
-                background: rgba(116, 185, 255, 0.1);
-                border: 1px solid rgba(116, 185, 255, 0.3);
-                border-radius: 12px;
-                padding: 15px;
-                color: white;
-                font-size: 18px;
-                text-align: center;
-                transition: all 0.3s ease;
-            }
-
-            .form-input:focus {
-                outline: none;
-                border-color: #74b9ff;
-                background: rgba(116, 185, 255, 0.15);
-                box-shadow: 0 0 0 3px rgba(116, 185, 255, 0.1);
-            }
-
-            .create-btn {
-                width: 100%;
-                background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
-                border: none;
-                border-radius: 15px;
-                padding: 16px;
-                font-size: 16px;
-                font-weight: 600;
-                color: white;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-
-            .create-btn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(253, 203, 110, 0.3);
-            }
-
-            .create-btn:disabled {
-                opacity: 0.6;
-                cursor: not-allowed;
-                transform: none;
-            }
-
-            .alert {
-                padding: 15px;
-                border-radius: 8px;
-                margin-bottom: 20px;
-            }
-
-            .alert-warning {
-                background: rgba(255, 193, 7, 0.1);
-                border: 1px solid rgba(255, 193, 7, 0.3);
-                color: #ffc107;
-            }
-
-            .scorecard-container {
-                background: rgba(45, 52, 54, 0.95);
-                border-radius: 20px;
-                padding: 20px;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-                display: none;
-                max-width: none;
-                width: 100%;
-            }
-
-            .scorecard-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 20px;
-                background: rgba(116, 185, 255, 0.1);
-                padding: 15px;
-                border-radius: 12px;
-                flex-wrap: wrap;
-                gap: 10px;
-            }
-
-            .category-header-info {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-
-            .category-icon {
-                width: 30px;
-                height: 30px;
-                background: #fdcb6e;
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 16px;
-            }
-
-            .scorecard-title {
-                text-align: center;
-                font-size: 16px;
-                font-weight: 600;
-                margin-bottom: 15px;
-                background: rgba(0, 0, 0, 0.3);
-                padding: 10px;
-                border-radius: 8px;
-            }
-
-            .player-section {
-                margin-bottom: 40px;
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 15px;
-                padding: 25px;
-                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-            }
-
-            .player-header {
-                font-size: 18px;
-                font-weight: 700;
-                margin-bottom: 20px;
-                color: white;
-                text-align: center;
-                background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-                padding: 15px;
-                border-radius: 12px;
-                box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
-            }
-
-            .score-table-container {
-                overflow-x: auto;
-                margin: 20px 0;
-                border-radius: 12px;
-                background: white;
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            }
-
-            .score-table {
-                width: 100%;
-                border-collapse: collapse;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                font-size: 14px;
-                background: white;
-                min-width: 600px;
-            }
-
-            .score-table th {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 12px 8px;
-                text-align: center;
-                font-weight: 600;
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                position: sticky;
-                top: 0;
-                z-index: 5;
-            }
-
-            .score-table td {
-                padding: 8px;
-                border: 1px solid #e1e8ed;
-                text-align: center;
-                vertical-align: middle;
-            }
-
-            .session-row:nth-child(even) {
-                background: rgba(79, 172, 254, 0.05);
-            }
-
-            .session-row:hover {
-                background: rgba(79, 172, 254, 0.1);
-            }
-
-            .session-label {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                font-weight: 600;
-                font-size: 14px;
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                min-width: 60px;
-            }
-
-            .arrow-input {
-                width: 50px;
-                height: 40px;
-                background: transparent;
-                border: 2px solid transparent;
-                border-radius: 6px;
-                padding: 8px 4px;
-                text-align: center;
-                font-size: 14px;
-                font-weight: 600;
-                color: #333;
-                transition: all 0.3s ease;
-                box-sizing: border-box;
-            }
-
-            .arrow-input:hover {
-                background: rgba(79, 172, 254, 0.1);
-                border-color: #4facfe;
-            }
-
-            .arrow-input:focus {
-                outline: none;
-                background: white;
-                border-color: #4facfe;
-                box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
-            }
-
-            .arrow-input:disabled {
-                background: #f8f9fa;
-                color: #666;
-                cursor: not-allowed;
-            }
-
-            .total-cell {
-                background: rgba(253, 203, 110, 0.1);
-                font-weight: 700;
-                color: #e17055;
-            }
-
-            .end-cell {
-                background: rgba(0, 184, 148, 0.1);
-                color: #00b894;
-                font-weight: 700;
-            }
-
-            .arrow-input[value="x"],
-            .arrow-input[value="X"] {
-                background: rgba(40, 167, 69, 0.1);
-                border-color: #28a745;
-                color: #28a745;
-                font-weight: 700;
-            }
-
-            .arrow-input[value="m"],
-            .arrow-input[value="M"] {
-                background: rgba(220, 53, 69, 0.1);
-                border-color: #dc3545;
-                color: #dc3545;
-                font-weight: 700;
-            }
-
-            .arrow-input[value="10"] {
-                background: rgba(40, 167, 69, 0.1);
-                border-color: #28a745;
-                color: #28a745;
-                font-weight: 700;
-            }
-
-            .arrow-input[value="9"],
-            .arrow-input[value="8"] {
-                background: rgba(255, 193, 7, 0.1);
-                border-color: #ffc107;
-                color: #856404;
-                font-weight: 600;
-            }
-
-            .total-summary {
-                background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-                border-radius: 12px;
-                padding: 20px;
-                text-align: center;
-                margin-top: 20px;
-                color: white;
-                box-shadow: 0 4px 15px rgba(67, 233, 123, 0.3);
-            }
-
-            .grand-total {
-                font-size: 24px;
-                font-weight: 700;
-                margin-bottom: 5px;
-            }
-
-            .x-count {
-                font-size: 16px;
-                font-weight: 600;
-                opacity: 0.9;
-            }
-
-            .edit-btn {
-                background: rgba(116, 185, 255, 0.2);
-                border: 1px solid rgba(116, 185, 255, 0.5);
-                color: white;
-                padding: 12px 20px;
-                border-radius: 8px;
-                font-size: 14px;
-                cursor: pointer;
-                margin-top: 20px;
-                width: 100%;
-            }
-
-            .edit-btn:hover {
-                background: rgba(116, 185, 255, 0.3);
-            }
-
-            .table-wrapper {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                margin: 1rem 0;
-                border-radius: 12px;
-                background: white;
-                box-shadow: 0 6px 18px rgba(22, 28, 37, 0.06);
-                padding: 12px;
-            }
-
-            .styled-table {
-                width: 100%;
-                border-collapse: collapse;
-                font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-                font-size: 14px;
-                color: #1f2937;
-                min-width: 640px;
-            }
-
-            .styled-table thead th {
-                text-align: left;
-                padding: 12px 16px;
-                background: linear-gradient(180deg,#f8fafc,#f1f5f9);
-                border-bottom: 2px solid rgba(15, 23, 42, 0.06);
-                font-weight: 600;
-                position: sticky;
-                top: 0;
-                z-index: 2;
-            }
-
-            .styled-table tbody td {
-                padding: 12px 16px;
-                vertical-align: middle;
-                border-bottom: 1px solid rgba(15, 23, 42, 0.04);
-            }
-
-            .styled-table tbody tr:nth-child(even) {
-                background: #fbfdff;
-            }
-
-            .styled-table tbody tr:hover {
-                background: rgba(99, 102, 241, 0.06);
-                transition: background 150ms ease;
-            }
-
-            .styled-table tbody td:first-child,
-            .styled-table thead th:first-child {
-                width: 64px;
-                text-align: center;
-            }
-
-            .btn {
-                display: inline-block;
-                padding: 6px 10px;
-                font-size: 13px;
-                border-radius: 8px;
-                border: 1px solid rgba(15, 23, 42, 0.08);
-                background: #fff;
-                cursor: pointer;
-                margin-right: 5px;
-                text-decoration: none;
-                color: #333;
-            }
-
-            .btn:hover {
-                background: #f0f0f0;
-            }
-
-            .header-bar {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 8px 12px;
-            }
-
-            .add-link {
-                text-decoration: none;
-                background: #2563eb;
-                color: white;
-                padding: 6px 12px;
-                border-radius: 6px;
-                font-size: 14px;
-            }
-
-            .header-flex {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 1rem;
-            }
-
-            h3 {
-                margin: 0;
-                color: white;
-            }
-
-            @media (max-width: 768px) {
-                .container {
-                    max-width: 100%;
-                    padding: 0 10px;
-                }
-
-                .scorecard-container {
-                    padding: 15px;
-                }
-
-                .scorecard-header {
-                    flex-direction: column;
-                    text-align: center;
-                }
-
-                .category-header-info {
-                    justify-content: center;
-                }
-
-                .score-table {
-                    font-size: 12px;
-                    min-width: 500px;
-                }
-                
-                .score-table th,
-                .score-table td {
-                    padding: 6px 4px;
-                }
-                
-                .arrow-input {
-                    width: 40px;
-                    height: 35px;
-                    padding: 6px 2px;
-                    font-size: 12px;
-                }
-                
-                .player-header {
-                    font-size: 16px;
-                    padding: 12px;
-                }
-                
-                .grand-total {
-                    font-size: 20px;
-                }
-            }
-
-            @media (max-width: 480px) {
-                .styled-table {
-                    font-size: 13px;
-                }
-                .styled-table thead th, .styled-table tbody td {
-                    padding: 10px 12px;
-                }
-
-                .score-table {
-                    min-width: 400px;
-                }
-                
-                .arrow-input {
-                    width: 35px;
-                    height: 30px;
-                }
-            }
-            /* ============================================
-   TABLE WRAPPER STYLES
-   ============================================ */
+        * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #2D3436 0%, #636e72 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: white;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.back-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: background 0.3s ease;
+    text-decoration: none;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.setup-form {
+    background: rgba(45, 52, 54, 0.95);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    margin-bottom: 20px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.logo {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+    border-radius: 15px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: #ddd;
+}
+
+.category-info {
+    background: rgba(116, 185, 255, 0.1);
+    border: 1px solid rgba(116, 185, 255, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.category-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #74b9ff;
+    margin-bottom: 5px;
+}
+
+.event-name {
+    font-size: 14px;
+    color: #ddd;
+}
+
+.peserta-count {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fdcb6e;
+    margin-top: 10px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-label {
+    display: block;
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: #74b9ff;
+}
+
+.form-input {
+    width: 100%;
+    background: rgba(116, 185, 255, 0.1);
+    border: 1px solid rgba(116, 185, 255, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    color: white;
+    font-size: 18px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #74b9ff;
+    background: rgba(116, 185, 255, 0.15);
+    box-shadow: 0 0 0 3px rgba(116, 185, 255, 0.1);
+}
+
+.create-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+    border: none;
+    border-radius: 15px;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.create-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(253, 203, 110, 0.3);
+}
+
+.create-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.alert-warning {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    color: #ffc107;
+}
+
+.scorecard-container {
+    background: rgba(45, 52, 54, 0.95);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    display: none;
+    max-width: none;
+    width: 100%;
+}
+
+.scorecard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    background: rgba(116, 185, 255, 0.1);
+    padding: 15px;
+    border-radius: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.category-header-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.category-icon {
+    width: 30px;
+    height: 30px;
+    background: #fdcb6e;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.scorecard-title {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.player-section {
+    margin-bottom: 40px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.player-header {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: white;
+    text-align: center;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+}
+
+.score-table-container {
+    overflow-x: auto;
+    margin: 20px 0;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.score-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
+    background: white;
+    min-width: 600px;
+}
+
+.score-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.score-table td {
+    padding: 8px;
+    border: 1px solid #e1e8ed;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.session-row:nth-child(even) {
+    background: rgba(79, 172, 254, 0.05);
+}
+
+.session-row:hover {
+    background: rgba(79, 172, 254, 0.1);
+}
+
+.session-label {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    min-width: 60px;
+}
+
+.arrow-input {
+    width: 50px;
+    height: 40px;
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.arrow-input:hover {
+    background: rgba(79, 172, 254, 0.1);
+    border-color: #4facfe;
+}
+
+.arrow-input:focus {
+    outline: none;
+    background: white;
+    border-color: #4facfe;
+    box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
+}
+
+.arrow-input:disabled {
+    background: #f8f9fa;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.total-cell {
+    background: rgba(253, 203, 110, 0.1);
+    font-weight: 700;
+    color: #e17055;
+}
+
+.end-cell {
+    background: rgba(0, 184, 148, 0.1);
+    color: #00b894;
+    font-weight: 700;
+}
+
+.arrow-input[value="x"],
+.arrow-input[value="X"] {
+    background: rgba(40, 167, 69, 0.1);
+    border-color: #28a745;
+    color: #28a745;
+    font-weight: 700;
+}
+
+.arrow-input[value="m"],
+.arrow-input[value="M"] {
+    background: rgba(220, 53, 69, 0.1);
+    border-color: #dc3545;
+    color: #dc3545;
+    font-weight: 700;
+}
+
+.arrow-input[value="10"] {
+    background: rgba(40, 167, 69, 0.1);
+    border-color: #28a745;
+    color: #28a745;
+    font-weight: 700;
+}
+
+.arrow-input[value="9"],
+.arrow-input[value="8"] {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: #ffc107;
+    color: #856404;
+    font-weight: 600;
+}
+
+.total-summary {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    margin-top: 20px;
+    color: white;
+    box-shadow: 0 4px 15px rgba(67, 233, 123, 0.3);
+}
+
+.grand-total {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.x-count {
+    font-size: 16px;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.edit-btn {
+    background: rgba(116, 185, 255, 0.2);
+    border: 1px solid rgba(116, 185, 255, 0.5);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.edit-btn:hover {
+    background: rgba(116, 185, 255, 0.3);
+}
+
 .table-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -1892,9 +1730,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     padding: 0;
 }
 
-/* ============================================
-   STYLED TABLE - BASE STYLES
-   ============================================ */
 .styled-table {
     width: 100%;
     border-collapse: collapse;
@@ -1905,9 +1740,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     background: white;
 }
 
-/* ============================================
-   TABLE HEADER STYLES
-   ============================================ */
 .styled-table thead th {
     text-align: left;
     padding: 16px 20px;
@@ -1931,9 +1763,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     border-radius: 0 12px 0 0;
 }
 
-/* ============================================
-   TABLE BODY STYLES
-   ============================================ */
 .styled-table tbody td {
     padding: 14px 20px;
     vertical-align: middle;
@@ -1958,11 +1787,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     border-bottom: none;
 }
 
-/* ============================================
-   COLUMN SPECIFIC STYLES
-   ============================================ */
-
-/* Number column (first column) */
 .styled-table tbody td:first-child {
     width: 64px;
     text-align: center;
@@ -1970,27 +1794,21 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     color: #667eea;
 }
 
-/* Date column (second column) */
 .styled-table tbody td:nth-child(2) {
     color: #6b7280;
     font-weight: 500;
 }
 
-/* Number columns (Jumlah Sesi & Anak Panah) */
 .styled-table tbody td:nth-child(3),
 .styled-table tbody td:nth-child(4) {
     font-weight: 600;
     color: #374151;
 }
 
-/* Actions column (last column) */
 .styled-table tbody td:last-child {
     white-space: nowrap;
 }
 
-/* ============================================
-   BUTTON STYLES - BASE
-   ============================================ */
 .btn {
     display: inline-block;
     padding: 8px 14px;
@@ -2019,11 +1837,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     transform: translateY(0);
 }
 
-/* ============================================
-   BUTTON STYLES - SPECIFIC COLORS
-   ============================================ */
-
-/* Ranking Button - Purple Gradient */
 .styled-table .btn:nth-child(1) {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -2033,7 +1846,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-/* Detail Button - Blue Gradient */
 .styled-table .btn:nth-child(2) {
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     color: white;
@@ -2043,7 +1855,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
 }
 
-/* Aduan Button - Green Gradient */
 .styled-table .btn:nth-child(3) {
     background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
     color: white;
@@ -2053,7 +1864,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     box-shadow: 0 4px 12px rgba(67, 233, 123, 0.4);
 }
 
-/* Hapus Button - Pink/Yellow Gradient */
 .styled-table .btn:nth-child(4) {
     background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
     color: white;
@@ -2063,48 +1873,34 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     box-shadow: 0 4px 12px rgba(250, 112, 154, 0.4);
 }
 
-/* ============================================
-   RESPONSIVE DESIGN
-   ============================================ */
-@media (max-width: 768px) {
-    .styled-table {
-        font-size: 13px;
-        min-width: 600px;
-    }
-    
-    .styled-table thead th,
-    .styled-table tbody td {
-        padding: 12px 16px;
-    }
-    
-    .btn {
-        padding: 6px 10px;
-        font-size: 11px;
-        margin-right: 4px;
-        margin-bottom: 4px;
-    }
+.header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
 }
 
-@media (max-width: 480px) {
-    .styled-table {
-        font-size: 12px;
-        min-width: 500px;
-    }
-    
-    .styled-table thead th,
-    .styled-table tbody td {
-        padding: 10px 12px;
-    }
-    
-    .btn {
-        padding: 5px 8px;
-        font-size: 10px;
-    }
+.add-link {
+    text-decoration: none;
+    background: #2563eb;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
 }
 
-/* ============================================
-   ADDITIONAL UTILITY CLASSES
-   ============================================ */
+.header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+h3 {
+    margin: 0;
+    color: white;
+}
+
 .table-container {
     position: relative;
     width: 100%;
@@ -2129,9 +1925,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     margin-bottom: 16px;
 }
 
-/* ============================================
-   ANIMATION KEYFRAMES
-   ============================================ */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -2154,9 +1947,588 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
 .styled-table tbody tr:nth-child(5) { animation-delay: 0.25s; }
 
 /* ============================================
-   PRINT STYLES
+   RESPONSIVE BREAKPOINTS
    ============================================ */
+
+/* Tablet - 1024px and below */
+@media (max-width: 1024px) {
+    .container {
+        max-width: 100%;
+        padding: 0 15px;
+    }
+
+    .setup-form,
+    .scorecard-container {
+        padding: 20px;
+    }
+
+    .player-section {
+        padding: 20px;
+    }
+}
+
+/* Tablet - 768px and below */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 0 5px;
+    }
+
+    .setup-form,
+    .scorecard-container {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .logo {
+        width: 45px;
+        height: 45px;
+        font-size: 22px;
+    }
+
+    .title {
+        font-size: 17px;
+    }
+
+    .subtitle {
+        font-size: 12px;
+    }
+
+    .scorecard-header {
+        flex-direction: column;
+        text-align: center;
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .category-header-info {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .player-section {
+        padding: 12px;
+        margin-bottom: 25px;
+    }
+
+    .player-header {
+        font-size: 15px;
+        padding: 10px;
+    }
+
+    .score-table {
+        font-size: 11px;
+        min-width: 420px;
+    }
+    
+    .score-table th,
+    .score-table td {
+        padding: 5px 3px;
+    }
+    
+    .arrow-input {
+        width: 38px;
+        height: 32px;
+        padding: 5px 2px;
+        font-size: 11px;
+    }
+    
+    .grand-total {
+        font-size: 19px;
+    }
+
+    .x-count {
+        font-size: 13px;
+    }
+
+    .total-summary {
+        padding: 12px;
+    }
+
+    .styled-table {
+        font-size: 12px;
+        min-width: 480px;
+    }
+    
+    .styled-table thead th,
+    .styled-table tbody td {
+        padding: 10px 10px;
+    }
+
+    .styled-table thead th {
+        font-size: 10px;
+    }
+    
+    .btn {
+        padding: 6px 10px;
+        font-size: 10px;
+        margin-right: 3px;
+        margin-bottom: 3px;
+    }
+
+    .header-flex {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    .add-link {
+        width: 100%;
+        text-align: center;
+        display: block;
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .form-input {
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    .create-btn {
+        padding: 13px;
+        font-size: 15px;
+    }
+}
+
+/* Mobile - 640px and below */
+@media (max-width: 640px) {
+    body {
+        padding: 8px;
+    }
+
+    .setup-form,
+    .scorecard-container {
+        padding: 10px;
+        border-radius: 10px;
+    }
+
+    .logo {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+
+    .title {
+        font-size: 15px;
+    }
+
+    .subtitle {
+        font-size: 11px;
+    }
+
+    .form-input {
+        padding: 10px;
+        font-size: 15px;
+    }
+
+    .create-btn {
+        padding: 11px;
+        font-size: 14px;
+    }
+
+    .category-info {
+        padding: 10px;
+    }
+
+    .category-name {
+        font-size: 13px;
+    }
+
+    .event-name {
+        font-size: 12px;
+    }
+
+    .peserta-count {
+        font-size: 15px;
+    }
+
+    .player-section {
+        padding: 10px;
+        margin-bottom: 20px;
+    }
+
+    .score-table {
+        min-width: 380px;
+        font-size: 10px;
+    }
+
+    .score-table th {
+        padding: 6px 2px;
+        font-size: 10px;
+    }
+
+    .score-table td {
+        padding: 5px 2px;
+    }
+    
+    .arrow-input {
+        width: 34px;
+        height: 28px;
+        font-size: 10px;
+        padding: 4px 1px;
+    }
+
+    .session-label {
+        font-size: 10px;
+        min-width: 45px;
+    }
+
+    .styled-table {
+        font-size: 11px;
+        min-width: 420px;
+    }
+    
+    .styled-table thead th,
+    .styled-table tbody td {
+        padding: 8px 6px;
+    }
+
+    .styled-table thead th {
+        font-size: 9px;
+    }
+    
+    .btn {
+        padding: 5px 8px;
+        font-size: 9px;
+        margin-right: 2px;
+        margin-bottom: 2px;
+    }
+
+    .player-header {
+        font-size: 14px;
+        padding: 9px;
+    }
+
+    .total-summary {
+        padding: 10px;
+    }
+
+    .grand-total {
+        font-size: 17px;
+    }
+
+    .x-count {
+        font-size: 12px;
+    }
+}
+
+/* Mobile - 480px and below */
+@media (max-width: 480px) {
+    body {
+        padding: 6px;
+    }
+
+    .back-btn {
+        width: 34px;
+        height: 34px;
+        margin-bottom: 12px;
+    }
+
+    .setup-form,
+    .scorecard-container {
+        padding: 8px;
+        border-radius: 8px;
+    }
+
+    .header {
+        margin-bottom: 15px;
+    }
+
+    .logo {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    .title {
+        font-size: 14px;
+    }
+
+    .subtitle {
+        font-size: 10px;
+    }
+
+    .form-label {
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    .form-input {
+        padding: 9px;
+        font-size: 14px;
+    }
+
+    .create-btn {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .category-info {
+        padding: 8px;
+    }
+
+    .scorecard-header {
+        padding: 8px;
+    }
+
+    .category-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 13px;
+    }
+
+    .scorecard-title {
+        font-size: 13px;
+        padding: 7px;
+    }
+
+    .player-section {
+        padding: 8px;
+        margin-bottom: 18px;
+    }
+
+    .player-header {
+        font-size: 13px;
+        padding: 8px;
+    }
+
+    .score-table {
+        min-width: 340px;
+        font-size: 9px;
+    }
+
+    .score-table th {
+        padding: 5px 2px;
+        font-size: 9px;
+    }
+
+    .score-table td {
+        padding: 4px 1px;
+    }
+    
+    .arrow-input {
+        width: 30px;
+        height: 26px;
+        font-size: 9px;
+        padding: 3px 1px;
+        border-radius: 4px;
+    }
+
+    .session-label {
+        font-size: 9px;
+        min-width: 40px;
+    }
+
+    .total-summary {
+        padding: 10px;
+    }
+
+    .grand-total {
+        font-size: 16px;
+    }
+
+    .x-count {
+        font-size: 11px;
+    }
+
+    .edit-btn {
+        padding: 9px 14px;
+        font-size: 12px;
+    }
+
+    .styled-table {
+        font-size: 10px;
+        min-width: 380px;
+    }
+    
+    .styled-table thead th,
+    .styled-table tbody td {
+        padding: 7px 5px;
+    }
+
+    .styled-table thead th {
+        font-size: 8px;
+        padding: 9px 5px;
+    }
+
+    .styled-table thead th:first-child {
+        border-radius: 8px 0 0 0;
+    }
+
+    .styled-table thead th:last-child {
+        border-radius: 0 8px 0 0;
+    }
+    
+    .btn {
+        padding: 4px 7px;
+        font-size: 8px;
+        margin-right: 2px;
+        margin-bottom: 2px;
+        white-space: nowrap;
+    }
+
+    .add-link {
+        padding: 7px 10px;
+        font-size: 11px;
+    }
+
+    h3 {
+        font-size: 15px;
+    }
+
+    .table-empty {
+        padding: 25px 12px;
+        font-size: 12px;
+    }
+
+    .table-empty::before {
+        font-size: 32px;
+        margin-bottom: 10px;
+    }
+
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .alert {
+        padding: 10px;
+        font-size: 12px;
+    }
+}
+
+/* Very small mobile - 360px and below */
+@media (max-width: 360px) {
+    body {
+        padding: 5px;
+    }
+
+    .setup-form,
+    .scorecard-container {
+        padding: 6px;
+    }
+
+    .logo {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+
+    .title {
+        font-size: 13px;
+    }
+
+    .subtitle {
+        font-size: 9px;
+    }
+
+    .form-input {
+        padding: 8px;
+        font-size: 13px;
+    }
+
+    .create-btn {
+        padding: 9px;
+        font-size: 12px;
+    }
+
+    .score-table {
+        min-width: 300px;
+        font-size: 8px;
+    }
+
+    .score-table th {
+        padding: 4px 1px;
+        font-size: 8px;
+    }
+
+    .score-table td {
+        padding: 3px 1px;
+    }
+
+    .arrow-input {
+        width: 28px;
+        height: 24px;
+        font-size: 8px;
+        padding: 2px 1px;
+    }
+
+    .session-label {
+        font-size: 8px;
+        min-width: 35px;
+    }
+
+    .styled-table {
+        min-width: 320px;
+        font-size: 9px;
+    }
+
+    .styled-table thead th,
+    .styled-table tbody td {
+        padding: 6px 4px;
+    }
+
+    .styled-table thead th {
+        font-size: 7px;
+    }
+
+    .btn {
+        padding: 3px 5px;
+        font-size: 7px;
+        border-radius: 4px;
+    }
+
+    .player-header {
+        font-size: 12px;
+        padding: 7px;
+    }
+
+    .grand-total {
+        font-size: 15px;
+    }
+
+    .x-count {
+        font-size: 10px;
+    }
+
+    .category-name {
+        font-size: 12px;
+    }
+
+    .event-name {
+        font-size: 11px;
+    }
+
+    .peserta-count {
+        font-size: 14px;
+    }
+}
+
+/* Print styles */
 @media print {
+    body {
+        background: white;
+        padding: 0;
+    }
+
+    .back-btn,
+    .edit-btn,
+    .add-link {
+        display: none;
+    }
+
+    .setup-form,
+    .scorecard-container {
+        box-shadow: none;
+        background: white;
+        color: black;
+    }
+
     .table-wrapper {
         box-shadow: none;
         border: 1px solid #ddd;
@@ -2171,8 +2543,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
         transform: none;
         box-shadow: none;
     }
+
+    .score-table-container {
+        box-shadow: none;
+    }
 }
-        </style>
+    </style>
         
     </head>
     <body>
