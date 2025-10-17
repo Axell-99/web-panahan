@@ -63,7 +63,6 @@ if (isset($_POST['delete_id'])) {
 
 // Handle export to Excel
 if (isset($_GET['export']) && $_GET['export'] == 'excel') {
-    // Set headers untuk download Excel
     header("Content-Type: application/vnd.ms-excel");
     header("Content-Disposition: attachment; filename=data_peserta_" . date('Y-m-d') . ".xls");
     header("Pragma: no-cache");
@@ -126,11 +125,30 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
         $result = $conn->query($query);
     }
 
+    // Group data by nama_peserta
+    $groupedData = [];
+    while ($row = $result->fetch_assoc()) {
+        $nama = $row['nama_peserta'];
+        if (!isset($groupedData[$nama])) {
+            $groupedData[$nama] = $row;
+            $groupedData[$nama]['categories'] = [];
+            $groupedData[$nama]['kegiatan'] = [];
+            $groupedData[$nama]['ids'] = [];
+        }
+        $groupedData[$nama]['ids'][] = $row['id'];
+        if (!empty($row['category_name']) && !in_array($row['category_name'], $groupedData[$nama]['categories'])) {
+            $groupedData[$nama]['categories'][] = $row['category_name'];
+        }
+        if (!empty($row['nama_kegiatan']) && !in_array($row['nama_kegiatan'], $groupedData[$nama]['kegiatan'])) {
+            $groupedData[$nama]['kegiatan'][] = $row['nama_kegiatan'];
+        }
+    }
+
     // Output Excel content
     echo "<table border='1'>";
     echo "<tr>";
     echo "<th>No</th>";
-    echo "<th>ID</th>";
+    echo "<th>ID(s)</th>";
     echo "<th>Nama Peserta</th>";
     echo "<th>Kategori</th>";
     echo "<th>Kegiatan</th>";
@@ -143,13 +161,11 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     echo "<th>Kelas</th>";
     echo "<th>Nomor HP</th>";
     echo "<th>Status Pembayaran</th>";
-    echo "<th>Bukti Pembayaran</th>";
     echo "<th>Tanggal Daftar</th>";
     echo "</tr>";
     
     $no = 1;
-    while ($row = $result->fetch_assoc()) {
-        // Hitung umur
+    foreach ($groupedData as $row) {
         $umur = "-";
         if (!empty($row['tanggal_lahir'])) {
             $dob = new DateTime($row['tanggal_lahir']);
@@ -161,10 +177,10 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
         
         echo "<tr>";
         echo "<td>" . $no++ . "</td>";
-        echo "<td>" . $row['id'] . "</td>";
+        echo "<td>" . implode(', ', $row['ids']) . "</td>";
         echo "<td>" . htmlspecialchars($row['nama_peserta']) . "</td>";
-        echo "<td>" . htmlspecialchars($row['category_name'] ?? '-') . "</td>";
-        echo "<td>" . htmlspecialchars($row['nama_kegiatan'] ?? '-') . "</td>";
+        echo "<td>" . htmlspecialchars(implode(', ', $row['categories']) ?: '-') . "</td>";
+        echo "<td>" . htmlspecialchars(implode(', ', $row['kegiatan']) ?: '-') . "</td>";
         echo "<td>" . htmlspecialchars($row['tanggal_lahir'] ?? '-') . "</td>";
         echo "<td>" . $umur . "</td>";
         echo "<td>" . htmlspecialchars($row['jenis_kelamin']) . "</td>";
@@ -174,7 +190,6 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
         echo "<td>" . htmlspecialchars($row['kelas'] ?? '-') . "</td>";
         echo "<td>" . htmlspecialchars($row['nomor_hp'] ?? '-') . "</td>";
         echo "<td>" . $statusBayar . "</td>";
-        echo "<td>" . htmlspecialchars($row['bukti_pembayaran'] ?? '-') . "</td>";
         echo "<td>" . htmlspecialchars($row['created_at'] ?? '-') . "</td>";
         echo "</tr>";
     }
@@ -254,10 +269,49 @@ if (!empty($params)) {
     $result = $conn->query($query);
 }
 
-$peserta = [];
+// Group peserta by nama_peserta
+$pesertaGrouped = [];
+$totalPeserta = 0;
+$totalLaki = 0;
+$totalPerempuan = 0;
+$totalBayar = 0;
+
 while ($row = $result->fetch_assoc()) {
-    $peserta[] = $row;
+    $totalPeserta++;
+    if ($row['jenis_kelamin'] == 'Laki-laki') $totalLaki++;
+    if ($row['jenis_kelamin'] == 'Perempuan') $totalPerempuan++;
+    if (!empty($row['bukti_pembayaran'])) $totalBayar++;
+    
+    $nama = $row['nama_peserta'];
+    
+    if (!isset($pesertaGrouped[$nama])) {
+        // First entry for this name
+        $pesertaGrouped[$nama] = [
+            'data' => $row,
+            'ids' => [$row['id']],
+            'categories' => [],
+            'kegiatan' => [],
+            'all_records' => [$row]
+        ];
+    } else {
+        // Additional entry for this name
+        $pesertaGrouped[$nama]['ids'][] = $row['id'];
+        $pesertaGrouped[$nama]['all_records'][] = $row;
+    }
+    
+    // Collect unique categories
+    if (!empty($row['category_name']) && !in_array($row['category_name'], $pesertaGrouped[$nama]['categories'])) {
+        $pesertaGrouped[$nama]['categories'][] = $row['category_name'];
+    }
+    
+    // Collect unique kegiatan
+    if (!empty($row['nama_kegiatan']) && !in_array($row['nama_kegiatan'], $pesertaGrouped[$nama]['kegiatan'])) {
+        $pesertaGrouped[$nama]['kegiatan'][] = $row['nama_kegiatan'];
+    }
 }
+
+// Count unique participants
+$uniqueCount = count($pesertaGrouped);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -389,6 +443,8 @@ while ($row = $result->fetch_assoc()) {
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            margin: 2px;
+            display: inline-block;
         }
 
         .btn {
@@ -621,13 +677,29 @@ while ($row = $result->fetch_assoc()) {
             border-top: none;
             padding: 1.5rem 2rem;
         }
+
+        .duplicate-count {
+            background: linear-gradient(135deg, #f59e0b, #ea580c);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .category-group, .kegiatan-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
     </style>
 </head>
 <body>
 <div class="container-fluid py-4">
     <div class="header-card text-center">
         <h1><i class="fas fa-bow-arrow me-3"></i>Data Peserta Turnamen Panahan</h1>
-        <p class="mb-0">Sistem Manajemen Peserta Turnamen</p>
+        <p class="mb-0">Sistem Manajemen Peserta Turnamen (Mode: Penggabungan Nama)</p>
     </div>
 
     <!-- Alert Messages -->
@@ -654,7 +726,6 @@ while ($row = $result->fetch_assoc()) {
         </div>
         <div>
             <?php
-            // Build export URL with current filters
             $exportParams = [];
             if (!empty($category_id)) $exportParams['category_id'] = $category_id;
             if (!empty($kegiatan_id)) $exportParams['kegiatan_id'] = $kegiatan_id;
@@ -674,25 +745,26 @@ while ($row = $result->fetch_assoc()) {
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="stats-card text-center text-white">
-                <h4><?= count($peserta) ?></h4>
-                <small>Total Peserta</small>
+                <h4><?= $uniqueCount ?></h4>
+                <small>Peserta Unik</small>
+                <div class="mt-2 text-muted" style="font-size: 0.75rem;">Total Entri: <?= $totalPeserta ?></div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stats-card text-center text-white">
-                <h4><?= count(array_filter($peserta, fn($p) => $p['jenis_kelamin'] == 'Laki-laki')) ?></h4>
+                <h4><?= $totalLaki ?></h4>
                 <small>Laki-laki</small>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stats-card text-center text-white">
-                <h4><?= count(array_filter($peserta, fn($p) => $p['jenis_kelamin'] == 'Perempuan')) ?></h4>
+                <h4><?= $totalPerempuan ?></h4>
                 <small>Perempuan</small>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stats-card text-center text-white">
-                <h4><?= count(array_filter($peserta, fn($p) => !empty($p['bukti_pembayaran']))) ?></h4>
+                <h4><?= $totalBayar ?></h4>
                 <small>Sudah Bayar</small>
             </div>
         </div>
@@ -755,6 +827,14 @@ while ($row = $result->fetch_assoc()) {
         </form>
     </div>
 
+    <!-- Info Alert -->
+    <?php if ($totalPeserta > $uniqueCount): ?>
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Info:</strong> Ditemukan <?= $totalPeserta - $uniqueCount ?> peserta dengan nama yang sama. Data telah digabungkan berdasarkan nama peserta.
+    </div>
+    <?php endif; ?>
+
     <!-- Tabel Peserta -->
     <div class="data-table">
         <div class="table-responsive">
@@ -777,7 +857,7 @@ while ($row = $result->fetch_assoc()) {
                     </tr>
                 </thead>
                 <tbody>
-                <?php if (empty($peserta)): ?>
+                <?php if (empty($pesertaGrouped)): ?>
                     <tr>
                         <td colspan="13" class="text-center text-muted py-4">
                             <i class="fas fa-inbox fa-3x mb-3"></i><br>
@@ -787,7 +867,10 @@ while ($row = $result->fetch_assoc()) {
                 <?php else: ?>
                     <?php 
                     $no = 1; 
-                    foreach ($peserta as $p): 
+                    foreach ($pesertaGrouped as $nama => $group): 
+                        $p = $group['data'];
+                        $recordCount = count($group['all_records']);
+                        
                         // Hitung umur dari tanggal_lahir
                         $umur = "-";
                         if (!empty($p['tanggal_lahir'])) {
@@ -803,19 +886,33 @@ while ($row = $result->fetch_assoc()) {
                         <tr>
                             <td class="text-center"><?= $no++ ?></td>
                             <td>
-                                <strong><?= htmlspecialchars($p['nama_peserta']) ?></strong><br>
-                                <small class="text-muted">ID: <?= $p['id'] ?></small>
+                                <strong><?= htmlspecialchars($nama) ?></strong>
+                                <?php if ($recordCount > 1): ?>
+                                    <span class="duplicate-count" title="Peserta ini memiliki <?= $recordCount ?> pendaftaran">
+                                        x<?= $recordCount ?>
+                                    </span>
+                                <?php endif; ?>
+                                <br>
+                                <small class="text-muted">ID: <?= implode(', ', $group['ids']) ?></small>
                             </td>
                             <td>
-                                <?php if (!empty($p['category_name'])): ?>
-                                    <span class="badge bg-info text-dark"><?= htmlspecialchars($p['category_name']) ?></span>
+                                <?php if (!empty($group['categories'])): ?>
+                                    <div class="category-group">
+                                        <?php foreach ($group['categories'] as $cat): ?>
+                                            <span class="badge bg-info text-dark"><?= htmlspecialchars($cat) ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
                                 <?php else: ?>
                                     <span class="text-muted small">Belum ditentukan</span>
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <?php if (!empty($p['nama_kegiatan'])): ?>
-                                    <span class="badge bg-primary"><?= htmlspecialchars($p['nama_kegiatan']) ?></span>
+                                <?php if (!empty($group['kegiatan'])): ?>
+                                    <div class="kegiatan-group">
+                                        <?php foreach ($group['kegiatan'] as $keg): ?>
+                                            <span class="badge bg-primary"><?= htmlspecialchars($keg) ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
                                 <?php else: ?>
                                     <span class="text-muted small">Belum ditentukan</span>
                                 <?php endif; ?>
@@ -851,17 +948,23 @@ while ($row = $result->fetch_assoc()) {
                                 </span>
                                 <?php if (!empty($p['bukti_pembayaran'])): ?>
                                     <br><small class="text-muted">
-                                        <a href="#" class="text-info" onclick="showImage('<?= htmlspecialchars($p['bukti_pembayaran']) ?>', '<?= htmlspecialchars($p['nama_peserta']) ?>')">
+                                        <a href="#" class="text-info" onclick="showImage('<?= htmlspecialchars($p['bukti_pembayaran']) ?>', '<?= htmlspecialchars($nama) ?>')">
                                             <i class="fas fa-file-image me-1"></i>Lihat Bukti
                                         </a>
                                     </small>
                                 <?php endif; ?>
                             </td>
                             <td class="text-center">
+                                <?php if ($recordCount > 1): ?>
+                                    <button type="button" class="btn btn-info btn-sm mb-1" onclick="showDetails(<?= htmlspecialchars(json_encode($group['all_records'])) ?>)" title="Lihat Detail">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <br>
+                                <?php endif; ?>
                                 <button type="button" class="btn btn-warning btn-sm me-1 mb-1" onclick="editPeserta(<?= htmlspecialchars(json_encode($p)) ?>)" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button type="button" class="btn btn-danger btn-sm mb-1" onclick="confirmDelete(<?= $p['id'] ?>, '<?= htmlspecialchars($p['nama_peserta'], ENT_QUOTES) ?>')" title="Hapus">
+                                <button type="button" class="btn btn-danger btn-sm mb-1" onclick="confirmDelete(<?= $p['id'] ?>, '<?= htmlspecialchars($nama, ENT_QUOTES) ?>')" title="Hapus">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </td>
@@ -873,11 +976,35 @@ while ($row = $result->fetch_assoc()) {
         </div>
     </div>
     
-    <?php if (!empty($peserta)): ?>
+    <?php if (!empty($pesertaGrouped)): ?>
         <div class="mt-3 text-end">
-            <small class="text-muted">Menampilkan <?= count($peserta) ?> peserta</small>
+            <small class="text-muted">
+                Menampilkan <?= $uniqueCount ?> peserta unik dari <?= $totalPeserta ?> total entri
+            </small>
         </div>
     <?php endif; ?>
+</div>
+
+<!-- Modal Detail Peserta (untuk nama duplikat) -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="detailModalLabel">
+                    <i class="fas fa-info-circle me-2"></i>Detail Pendaftaran Peserta
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="detailContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Tutup
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Modal Edit Peserta -->
@@ -1040,18 +1167,64 @@ while ($row = $result->fetch_assoc()) {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 <script>
-// Auto-submit form on select change untuk better UX
-document.querySelectorAll('select[name="category_id"], select[name="kegiatan_id"], select[name="gender"]').forEach(function(select) {
-    select.addEventListener('change', function() {
-        this.form.submit();
+// Function untuk menampilkan detail peserta dengan nama duplikat
+function showDetails(records) {
+    const detailContent = document.getElementById('detailContent');
+    
+    let html = '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>';
+    html += '<strong>Peserta ini memiliki ' + records.length + ' pendaftaran dengan kategori/kegiatan yang berbeda</strong></div>';
+    
+    html += '<div class="table-responsive">';
+    html += '<table class="table table-bordered table-striped">';
+    html += '<thead class="table-dark">';
+    html += '<tr>';
+    html += '<th>No</th>';
+    html += '<th>ID</th>';
+    html += '<th>Kategori</th>';
+    html += '<th>Kegiatan</th>';
+    html += '<th>Tanggal Lahir</th>';
+    html += '<th>Gender</th>';
+    html += '<th>Asal Kota</th>';
+    html += '<th>Club</th>';
+    html += '<th>Sekolah</th>';
+    html += '<th>Status Bayar</th>';
+    html += '<th>Aksi</th>';
+    html += '</tr>';
+    html += '</thead>';
+    html += '<tbody>';
+    
+    records.forEach(function(record, index) {
+        const statusBadge = record.bukti_pembayaran ? 
+            '<span class="badge bg-success">Sudah Bayar</span>' : 
+            '<span class="badge bg-warning text-dark">Belum Bayar</span>';
+        
+        html += '<tr>';
+        html += '<td>' + (index + 1) + '</td>';
+        html += '<td>' + record.id + '</td>';
+        html += '<td>' + (record.category_name || '-') + '</td>';
+        html += '<td>' + (record.nama_kegiatan || '-') + '</td>';
+        html += '<td>' + (record.tanggal_lahir || '-') + '</td>';
+        html += '<td>' + record.jenis_kelamin + '</td>';
+        html += '<td>' + (record.asal_kota || '-') + '</td>';
+        html += '<td>' + (record.nama_club || '-') + '</td>';
+        html += '<td>' + (record.sekolah || '-') + '</td>';
+        html += '<td>' + statusBadge + '</td>';
+        html += '<td>';
+        html += '<button class="btn btn-warning btn-sm me-1" onclick="editPeserta(' + JSON.stringify(record).replace(/"/g, '&quot;') + ')" title="Edit"><i class="fas fa-edit"></i></button>';
+        html += '<button class="btn btn-danger btn-sm" onclick="confirmDelete(' + record.id + ', \'' + record.nama_peserta.replace(/'/g, "\\'") + '\')" title="Hapus"><i class="fas fa-trash-alt"></i></button>';
+        html += '</td>';
+        html += '</tr>';
     });
-});
-
-// Tooltip untuk teks yang terpotong
-var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'))
-var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl)
-});
+    
+    html += '</tbody>';
+    html += '</table>';
+    html += '</div>';
+    
+    detailContent.innerHTML = html;
+    
+    const detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
+    detailModal.show();
+}
 
 // Function untuk edit peserta
 function editPeserta(data) {
@@ -1067,6 +1240,12 @@ function editPeserta(data) {
     document.getElementById('edit_kelas').value = data.kelas || '';
     document.getElementById('edit_nomor_hp').value = data.nomor_hp || '';
     
+    // Close detail modal if open
+    const detailModal = bootstrap.Modal.getInstance(document.getElementById('detailModal'));
+    if (detailModal) {
+        detailModal.hide();
+    }
+    
     const editModal = new bootstrap.Modal(document.getElementById('editModal'));
     editModal.show();
 }
@@ -1075,6 +1254,12 @@ function editPeserta(data) {
 function confirmDelete(id, nama) {
     document.getElementById('deleteIdInput').value = id;
     document.getElementById('deletePesertaName').textContent = nama;
+    
+    // Close detail modal if open
+    const detailModal = bootstrap.Modal.getInstance(document.getElementById('detailModal'));
+    if (detailModal) {
+        detailModal.hide();
+    }
     
     const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
     deleteModal.show();
@@ -1087,18 +1272,14 @@ function showImage(filename, pesertaName) {
     const modalBody = document.querySelector('#imageModal .modal-body');
     const downloadLink = document.getElementById('downloadImage');
     
-    // Set title
     modalTitle.textContent = 'Bukti Pembayaran - ' + pesertaName;
     
-    // Cek ekstensi file untuk menentukan cara menampilkan
     const fileExtension = filename.toLowerCase().split('.').pop();
     const imagePath = 'uploads/' + filename;
     
-    // Reset modal body
     modalBody.innerHTML = '';
     
     if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(fileExtension)) {
-        // Tampilkan sebagai gambar
         const img = document.createElement('img');
         img.id = 'modalImage';
         img.className = 'img-fluid';
@@ -1107,13 +1288,11 @@ function showImage(filename, pesertaName) {
         img.style.borderRadius = '8px';
         img.alt = 'Bukti Pembayaran';
         
-        // Error div
         const errorDiv = document.createElement('div');
         errorDiv.id = 'imageError';
         errorDiv.className = 'alert alert-warning mt-3';
         errorDiv.style.display = 'none';
         
-        // Info div
         const infoDiv = document.createElement('div');
         infoDiv.className = 'mt-3 p-3 bg-light rounded';
         infoDiv.style.fontSize = '14px';
@@ -1123,7 +1302,6 @@ function showImage(filename, pesertaName) {
             <strong>Path:</strong> ${imagePath}
         `;
         
-        // Test loading gambar dengan berbagai kemungkinan path
         const possiblePaths = [
             'uploads/' + filename,
             'uploads/bukti/' + filename,
@@ -1135,7 +1313,6 @@ function showImage(filename, pesertaName) {
         
         function tryNextPath() {
             if (pathIndex >= possiblePaths.length) {
-                // Semua path gagal, tampilkan error
                 errorDiv.innerHTML = `
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     Gambar tidak dapat dimuat dari semua path yang dicoba.
@@ -1162,38 +1339,31 @@ function showImage(filename, pesertaName) {
             const currentPath = possiblePaths[pathIndex];
             
             testImage.onload = function() {
-                // Gambar berhasil dimuat
                 img.src = currentPath;
                 modalBody.appendChild(img);
                 modalBody.appendChild(infoDiv);
                 
-                // Update info dengan path yang berhasil
                 infoDiv.innerHTML = `
                     <strong>File:</strong> ${filename}<br>
                     <strong>Peserta:</strong> ${pesertaName}<br>
                     <strong>Path:</strong> ${currentPath} ✅
                 `;
                 
-                // Set download link
                 downloadLink.href = currentPath;
                 downloadLink.download = 'bukti_pembayaran_' + pesertaName.replace(/[^a-zA-Z0-9]/g, '_') + '.' + fileExtension;
             };
             
             testImage.onerror = function() {
-                // Coba path berikutnya
                 pathIndex++;
                 tryNextPath();
             };
             
-            // Mulai test loading
             testImage.src = currentPath;
         }
         
-        // Mulai dari path pertama
         tryNextPath();
         
     } else if (fileExtension === 'pdf') {
-        // Tampilkan interface untuk PDF
         modalBody.innerHTML = `
             <div class="text-center p-4">
                 <div style="font-size: 48px; color: #dc3545; margin-bottom: 20px;">📄</div>
@@ -1214,12 +1384,10 @@ function showImage(filename, pesertaName) {
             </div>
         `;
         
-        // Set download link
         downloadLink.href = imagePath;
         downloadLink.download = filename;
         
     } else {
-        // File format tidak didukung
         modalBody.innerHTML = `
             <div class="text-center p-4">
                 <div style="font-size: 48px; color: #ffc107; margin-bottom: 20px;">⚠️</div>
@@ -1241,25 +1409,36 @@ function showImage(filename, pesertaName) {
             </div>
         `;
         
-        // Set download link
         downloadLink.href = imagePath;
         downloadLink.download = filename;
     }
     
-    // Show modal
     modal.show();
 }
 
+// Auto-submit form on select change untuk better UX
+document.querySelectorAll('select[name="category_id"], select[name="kegiatan_id"], select[name="gender"]').forEach(function(select) {
+    select.addEventListener('change', function() {
+        this.form.submit();
+    });
+});
+
+// Tooltip untuk teks yang terpotong
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+});
+
 // Konfirmasi sebelum export Excel
 document.querySelector('a[href*="export=excel"]').addEventListener('click', function(e) {
-    if (!confirm('Apakah Anda yakin ingin mengexport data ke Excel? Proses ini mungkin membutuhkan waktu beberapa detik.')) {
+    if (!confirm('Apakah Anda yakin ingin mengexport data ke Excel? Data akan diexport dalam format yang sudah digabungkan.')) {
         e.preventDefault();
     }
 });
 
 // Auto dismiss alerts after 5 seconds
 setTimeout(function() {
-    var alerts = document.querySelectorAll('.alert');
+    var alerts = document.querySelectorAll('.alert-success, .alert-danger');
     alerts.forEach(function(alert) {
         var bsAlert = new bootstrap.Alert(alert);
         bsAlert.close();

@@ -235,7 +235,7 @@ if (isset($_GET['aduan']) && $_GET['aduan'] == 'true') {
             }
 
             body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
                 background: linear-gradient(135deg, #2d3436 0%, #000000 100%);
                 min-height: 100vh;
                 padding: 20px;
@@ -3017,7 +3017,6 @@ foreach ($pesertaList as $peserta) {
     $statistik['kategori'][$kategori]++;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -3473,19 +3472,118 @@ foreach ($pesertaList as $peserta) {
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        /* Mobile Card View */
+        .mobile-card-view {
+            display: none;
+        }
+
+        .participant-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #4facfe;
+        }
+
+        .participant-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .participant-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .participant-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+            flex: 1;
+            margin: 0 12px;
+            word-break: break-word;
+        }
+
+        .participant-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-item.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .participant-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid #e9ecef;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .contact-link {
+            color: #4facfe;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Tablet Responsive */
         @media (max-width: 1024px) {
             .filters-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr 1fr;
                 gap: 15px;
+            }
+            
+            .filter-group:first-child {
+                grid-column: 1 / -1;
             }
             
             .filter-buttons {
                 flex-direction: row;
                 gap: 10px;
+                grid-column: 1 / -1;
             }
             
             .statistics {
-                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                grid-template-columns: repeat(3, 1fr);
             }
             
             .table-container {
@@ -3495,20 +3593,192 @@ foreach ($pesertaList as $peserta) {
             .table {
                 min-width: 1000px;
             }
+
+            .category-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
+        /* Mobile Responsive */
         @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                border-radius: 10px;
+            }
+
             .content {
-                padding: 20px;
+                padding: 15px;
             }
             
             .header {
-                padding: 20px;
+                padding: 20px 15px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .header p {
+                font-size: 14px;
+            }
+
+            .kegiatan-info h3 {
+                font-size: 16px;
+            }
+
+            .kegiatan-info p {
+                font-size: 14px;
+            }
+            
+            .statistics {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 15px 10px;
+            }
+
+            .stat-number {
+                font-size: 24px;
+            }
+
+            .stat-label {
+                font-size: 11px;
+            }
+
+            .filters {
+                padding: 15px;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .filter-group:first-child {
+                grid-column: 1;
+            }
+
+            .filter-buttons {
+                flex-direction: column;
+                gap: 8px;
+                grid-column: 1;
+            }
+
+            .btn, .btn-input {
+                width: 100%;
+                padding: 12px;
             }
             
             .actions {
                 flex-direction: column;
-                gap: 15px;
+                gap: 12px;
+                align-items: stretch;
+            }
+
+            .actions > div {
+                width: 100%;
+            }
+
+            .export-btn {
+                display: block;
+                text-align: center;
+                width: 100%;
+            }
+
+            .actions > div:last-child {
+                text-align: center;
+            }
+
+            /* Hide table, show cards on mobile */
+            .table-container {
+                display: none;
+            }
+
+            .mobile-card-view {
+                display: block;
+            }
+
+            .category-distribution {
+                padding: 15px;
+            }
+
+            .category-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .category-item {
+                padding: 10px;
+            }
+
+            .modal-content {
+                margin: 10% auto;
+                width: 95%;
+            }
+
+            .modal-header {
+                padding: 15px;
+            }
+
+            .modal-header h3 {
+                font-size: 16px;
+            }
+
+            .modal-body {
+                padding: 15px;
+            }
+
+            .modal-body img {
+                max-height: 400px;
+            }
+
+            .close {
+                right: 15px;
+                top: 12px;
+                font-size: 24px;
+            }
+
+            .no-data h3 {
+                font-size: 18px;
+            }
+
+            .no-data p {
+                font-size: 14px;
+            }
+        }
+
+        /* Extra Small Mobile */
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .statistics {
+                grid-template-columns: 1fr;
+            }
+
+            .participant-details {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-number {
+                font-size: 22px;
+            }
+        }
+
+        /* Landscape Mobile */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .statistics {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .participant-details {
+                grid-template-columns: 1fr 1fr;
             }
         }
     </style>
@@ -3626,6 +3896,7 @@ foreach ($pesertaList as $peserta) {
                 </div>
             </div>
 
+            <!-- Desktop Table View -->
             <div class="table-container">
                 <?php if ($totalPeserta > 0): ?>
                     <table class="table">
@@ -3721,6 +3992,87 @@ foreach ($pesertaList as $peserta) {
                 <?php endif; ?>
             </div>
 
+            <!-- Mobile Card View -->
+            <div class="mobile-card-view">
+                <?php if ($totalPeserta > 0): ?>
+                    <?php foreach ($pesertaList as $index => $peserta): ?>
+                        <div class="participant-card">
+                            <div class="participant-card-header">
+                                <div class="participant-number"><?= $index + 1 ?></div>
+                                <div class="participant-name"><?= htmlspecialchars($peserta['nama_peserta']) ?></div>
+                                <div class="payment-status">
+                                    <?php if (!empty($peserta['bukti_pembayaran'])): ?>
+                                        <span class="payment-icon payment-success" 
+                                              onclick="showPaymentModal('<?= htmlspecialchars($peserta['nama_peserta']) ?>', '<?= $peserta['bukti_pembayaran'] ?>')">📄✅</span>
+                                    <?php else: ?>
+                                        <span class="payment-icon payment-pending">❌</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="participant-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Gender</span>
+                                    <span class="detail-value">
+                                        <span class="badge <?= $peserta['jenis_kelamin'] == 'Laki-laki' ? 'badge-male' : 'badge-female' ?>">
+                                            <?= $peserta['jenis_kelamin'] ?>
+                                        </span>
+                                    </span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Umur</span>
+                                    <span class="detail-value"><?= $peserta['umur'] ?> tahun</span>
+                                </div>
+                                <div class="detail-item full-width">
+                                    <span class="detail-label">Kategori</span>
+                                    <span class="detail-value">
+                                        <span class="badge badge-category"><?= htmlspecialchars($peserta['category_name']) ?></span>
+                                        <span class="age-info" style="display: block; margin-top: 4px;">
+                                            <?= $peserta['min_age'] ?>-<?= $peserta['max_age'] ?> thn 
+                                            (<?= $peserta['category_gender'] == 'Campuran' ? 'Putra/Putri' : $peserta['category_gender'] ?>)
+                                        </span>
+                                    </span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Asal Kota</span>
+                                    <span class="detail-value"><?= htmlspecialchars($peserta['asal_kota'] ?: '-') ?></span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Kelas</span>
+                                    <span class="detail-value"><?= htmlspecialchars($peserta['kelas'] ?: '-') ?></span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Club</span>
+                                    <span class="detail-value"><?= htmlspecialchars($peserta['nama_club'] ?: '-') ?></span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Sekolah</span>
+                                    <span class="detail-value"><?= htmlspecialchars($peserta['sekolah'] ?: '-') ?></span>
+                                </div>
+                            </div>
+                            <div class="participant-footer">
+                                <a href="tel:<?= htmlspecialchars($peserta['nomor_hp']) ?>" class="contact-link">📞 <?= htmlspecialchars($peserta['nomor_hp']) ?></a>
+                                <span class="age-info">Lahir: <?= date('d/m/Y', strtotime($peserta['tanggal_lahir'])) ?></span>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="no-data">
+                        <h3>Belum Ada Peserta Terdaftar</h3>
+                        <p>
+                            <?php if (!empty($search) || $filter_kategori > 0 || !empty($filter_gender)): ?>
+                                Tidak ada peserta yang sesuai dengan filter yang dipilih.
+                                <br><br>
+                                <a href="?kegiatan_id=<?= $kegiatan_id ?>" class="btn btn-secondary">Reset Filter</a>
+                            <?php else: ?>
+                                Belum ada peserta yang mendaftar untuk kegiatan ini.
+                                <br><br>
+                                <a href="form_pendaftaran.php?kegiatan_id=<?= $kegiatan_id ?>" class="btn btn-success">Daftarkan Peserta Pertama</a>
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                <?php endif; ?>
+            </div>
+
             <?php if (!empty($statistik['kategori'])): ?>
                 <div class="category-distribution">
                     <h4>Distribusi per Kategori:</h4>
@@ -3750,24 +4102,20 @@ foreach ($pesertaList as $peserta) {
     </div>
 
     <script>
-        // Event listener untuk select kategori - update button visibility dan auto-submit
         document.getElementById('filter_kategori').addEventListener('change', function() {
             updateInputButton();
         });
 
-        // Event listener untuk select gender
         document.getElementById('filter_gender').addEventListener('change', function() {
             updateInputButton();
         });
 
-        // Search dengan Enter
         document.getElementById('search').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 this.form.submit();
             }
         });
 
-        // Clear search dengan Escape
         document.getElementById('search').addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 this.value = '';
@@ -3775,7 +4123,6 @@ foreach ($pesertaList as $peserta) {
             }
         });
 
-        // Function untuk update tombol input
         function updateInputButton() {
             const kategoriSelect = document.getElementById('filter_kategori');
             const inputBtn = document.getElementById('inputBtn');
@@ -3788,7 +4135,6 @@ foreach ($pesertaList as $peserta) {
             }
         }
 
-        // Function untuk handle klik tombol input
         function goToInput(e) {
             const kategoriSelect = document.getElementById('filter_kategori');
             
@@ -3798,16 +4144,13 @@ foreach ($pesertaList as $peserta) {
                 return false;
             }
             
-            // Redirect ke halaman scorecard
             window.location.href = 'detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=' + kategoriSelect.value;
         }
 
-        // Initialize tombol input saat page load
         document.addEventListener('DOMContentLoaded', function() {
             updateInputButton();
         });
 
-        // Payment Modal Functions
         function showPaymentModal(namaPeserta, fileName) {
             const modal = document.getElementById('paymentModal');
             const modalTitle = document.getElementById('modal-title');

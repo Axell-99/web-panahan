@@ -749,18 +749,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 5px;
         }
 
+        /* Responsive Design for Mobile */
         @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                border-radius: 10px;
+                margin: 10px 0;
+            }
+
             .form-grid {
                 grid-template-columns: 1fr;
                 gap: 20px;
             }
             
             .form-container {
-                padding: 25px;
+                padding: 20px 15px;
             }
             
             .header {
-                padding: 20px;
+                padding: 20px 15px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+                margin-bottom: 8px;
+            }
+
+            .header p {
+                font-size: 14px;
+            }
+
+            .kegiatan-info {
+                padding: 12px;
+            }
+
+            .kegiatan-info h3 {
+                font-size: 18px;
+            }
+
+            .kegiatan-info p {
+                font-size: 14px;
             }
             
             .radio-group {
@@ -770,6 +801,120 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             .checkbox-group {
                 max-height: 250px;
+                padding: 12px;
+            }
+
+            .checkbox-item {
+                padding: 10px;
+                margin-bottom: 12px;
+            }
+
+            .checkbox-label .category-name {
+                font-size: 14px;
+            }
+
+            .checkbox-label .age-info,
+            .checkbox-label .gender-info {
+                font-size: 11px;
+            }
+
+            .form-group label {
+                font-size: 13px;
+            }
+
+            .form-control {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+
+            select.form-control {
+                background-position: right 10px center;
+                padding-right: 30px;
+            }
+
+            .btn-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .btn {
+                width: 100%;
+                padding: 14px 20px;
+                font-size: 15px;
+            }
+
+            .alert {
+                padding: 12px;
+                font-size: 14px;
+                margin-bottom: 15px;
+            }
+
+            .info-box {
+                padding: 10px;
+                font-size: 13px;
+                margin-bottom: 15px;
+            }
+
+            .category-info {
+                padding: 12px;
+                font-size: 13px;
+            }
+
+            .file-input {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+
+            .file-info {
+                font-size: 11px;
+            }
+
+            .file-preview {
+                font-size: 13px;
+            }
+
+            .back-link {
+                font-size: 14px;
+                margin-bottom: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+
+            .container {
+                border-radius: 8px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .header p {
+                font-size: 13px;
+            }
+
+            .form-container {
+                padding: 15px 10px;
+            }
+
+            .form-group {
+                margin-bottom: 20px;
+            }
+
+            .checkbox-item {
+                padding: 8px;
+            }
+
+            .checkbox-item input[type="checkbox"] {
+                transform: scale(1.1);
+            }
+
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
             }
         }
     </style>

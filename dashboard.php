@@ -23,451 +23,208 @@ $role = $_SESSION['role'] ?? 'user';
     <title>Dashboard Turnamen Panahan</title>
     <style>
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, sans-serif;
             display: flex;
             min-height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            overflow-x: hidden;
         }
 
-        .container {
-            display: flex;
-            width: 100%;
-            backdrop-filter: blur(10px);
-            position: relative;
-        }
-
-        /* Hamburger Menu */
-        .hamburger {
-            display: none;
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1001;
-            background: rgba(255, 255, 255, 0.95);
-            border: none;
-            border-radius: 12px;
-            padding: 12px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-        }
-
-        .hamburger:hover {
-            transform: scale(1.05);
-        }
-
-        .hamburger span {
-            display: block;
-            width: 25px;
-            height: 3px;
-            background: #2d3436;
-            margin: 5px 0;
-            transition: all 0.3s ease;
-            border-radius: 3px;
-        }
-
-        .hamburger.active span:nth-child(1) {
-            transform: rotate(45deg) translate(8px, 8px);
-        }
-
-        .hamburger.active span:nth-child(2) {
-            opacity: 0;
-        }
-
-        .hamburger.active span:nth-child(3) {
-            transform: rotate(-45deg) translate(7px, -7px);
-        }
-
-        /* Overlay untuk mobile */
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .overlay.active {
-            display: block;
-            opacity: 1;
-        }
-
+        /* SIDEBAR */
         .sidebar {
             width: 280px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
+            background: white;
             display: flex;
             flex-direction: column;
-            padding: 0;
-            border-right: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 1000;
         }
 
         .logo {
             padding: 30px 20px;
-            text-align: center;
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            background: #ff6b6b;
             color: white;
-            font-size: 24px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .logo::before {
-            content: '🏹';
-            position: absolute;
-            top: -20px;
-            right: -20px;
-            font-size: 60px;
-            opacity: 0.3;
-            transform: rotate(15deg);
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
         }
 
         .menu-section {
             padding: 20px;
             flex: 1;
-            overflow-y: auto;
         }
 
-        .menu-btn, .dropdown-btn {
-            width: 100%;
-            margin: 8px 0;
+        /* MENU ITEMS - SUPER SIMPLE */
+        .menu-item {
+            margin-bottom: 10px;
+        }
+
+        .menu-item a {
+            display: block;
             padding: 15px 20px;
-            background: linear-gradient(135deg, #74b9ff, #0984e3);
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            text-align: left;
-            font-size: 15px;
-            font-weight: 600;
-            color: white;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .menu-btn::before, .dropdown-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .menu-btn:hover::before, .dropdown-btn:hover::before {
-            left: 100%;
-        }
-
-        .menu-btn:hover, .dropdown-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(116, 185, 255, 0.4);
-        }
-
-        .menu-btn a {
+            background: #3498db;
             color: white;
             text-decoration: none;
-            display: block;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .menu-item a:hover {
+            background: #2980b9;
+        }
+
+        /* DROPDOWN - SUPER SIMPLE */
+        .dropdown-btn {
             width: 100%;
-            position: relative;
-            z-index: 1;
-        }
-
-        .menu-btn {
-            padding: 0;
-        }
-
-        .menu-btn a {
             padding: 15px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            text-align: left;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
         }
 
-        .dropdown {
-            width: 100%;
+        .dropdown-btn:hover {
+            background: #2980b9;
         }
 
         .dropdown-content {
             display: none;
-            flex-direction: column;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            margin-top: 8px;
-            overflow: hidden;
-            animation: slideDown 0.3s ease;
+            background: #ecf0f1;
+            border-radius: 8px;
+            margin-top: 5px;
+            padding: 5px;
         }
 
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .dropdown-content.active {
+            display: block;
         }
 
         .dropdown-content a {
-            padding: 12px 20px;
+            display: block;
+            padding: 10px 20px;
+            color: #2c3e50;
             text-decoration: none;
-            color: #2d3436;
-            transition: all 0.3s ease;
-            border-left: 3px solid transparent;
+            border-radius: 5px;
+            margin: 2px 0;
         }
 
         .dropdown-content a:hover {
-            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            background: #3498db;
             color: white;
-            border-left: 3px solid #ff6b6b;
-            transform: translateX(5px);
         }
 
+        .logout-section {
+            padding: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .logout-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #e74c3c;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
+        /* MAIN CONTENT */
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 0;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            min-width: 0;
         }
 
         .header {
+            background: white;
+            padding: 20px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 30px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .header-left h1 {
-            color: #2d3436;
-            font-size: 28px;
-            font-weight: 700;
-        }
-
-        .header-left p {
-            color: #636e72;
-            margin-top: 5px;
+        .header h1 {
+            font-size: 24px;
+            color: #2c3e50;
         }
 
         .username-container {
+            background: #3498db;
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
             display: flex;
             align-items: center;
-            gap: 15px;
-            background: linear-gradient(135deg, #348dd6ff, #348dd6ff);
-            padding: 12px 20px;
-            border-radius: 50px;
-            color: white;
-            box-shadow: 0 4px 15px rgba(253, 121, 168, 0.3);
-        }
-
-        .username {
-            font-size: 16px;
-            font-weight: 600;
+            gap: 10px;
         }
 
         .profile-logo {
-            width: 40px;
-            height: 40px;
+            width: 35px;
+            height: 35px;
             border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            border: 2px solid white;
         }
 
         .dashboard-content {
             flex: 1;
             padding: 30px;
-            overflow-y: auto;
         }
 
         .welcome-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
+            background: white;
             padding: 40px;
+            border-radius: 15px;
             text-align: center;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .welcome-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(116, 185, 255, 0.1), transparent);
-            transform: rotate(45deg);
-            animation: shimmer 3s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
         .welcome-card h2 {
-            color: #2d3436;
-            font-size: 32px;
-            margin-bottom: 15px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .welcome-card p {
-            color: #636e72;
-            font-size: 18px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 16px;
-            padding: 25px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #ff6b6b, #ee5a24);
-        }
-
-        .stat-card h3 {
-            color: #2d3436;
-            font-size: 24px;
+            color: #2c3e50;
             margin-bottom: 10px;
         }
 
-        .stat-card .number {
-            font-size: 36px;
-            font-weight: 700;
-            color: #0984e3;
-            margin-bottom: 5px;
+        .welcome-card p {
+            color: #7f8c8d;
         }
 
-        .logout-section {
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        /* MOBILE */
+        .hamburger {
+            display: none;
         }
 
-        .logout-btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #ff7675, #d63031);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: block;
-            text-align: center;
-        }
-
-        .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(255, 118, 117, 0.4);
-        }
-
-        /* Scrollbar Styling */
-        .dashboard-content::-webkit-scrollbar,
-        .menu-section::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .dashboard-content::-webkit-scrollbar-track,
-        .menu-section::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-
-        .dashboard-content::-webkit-scrollbar-thumb,
-        .menu-section::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #74b9ff, #0984e3);
-            border-radius: 10px;
-        }
-
-        .dashboard-content::-webkit-scrollbar-thumb:hover,
-        .menu-section::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #0984e3, #74b9ff);
-        }
-
-        /* Responsive Design untuk Tablet */
-        @media (max-width: 1024px) {
-            .sidebar {
-                width: 250px;
-            }
-
-            .header-left h1 {
-                font-size: 24px;
-            }
-
-            .welcome-card h2 {
-                font-size: 28px;
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            }
-        }
-
-        /* Responsive Design untuk Mobile */
         @media (max-width: 768px) {
             .hamburger {
                 display: block;
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                z-index: 1001;
+                background: white;
+                border: none;
+                padding: 10px;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+
+            .hamburger span {
+                display: block;
+                width: 25px;
+                height: 3px;
+                background: #333;
+                margin: 5px 0;
             }
 
             .sidebar {
@@ -475,390 +232,155 @@ $role = $_SESSION['role'] ?? 'user';
                 left: -280px;
                 top: 0;
                 bottom: 0;
-                width: 280px;
                 z-index: 1000;
-                transition: left 0.3s ease;
+                transition: left 0.3s;
             }
 
             .sidebar.active {
                 left: 0;
             }
 
-            .main-content {
-                width: 100%;
-                margin-left: 0;
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+            }
+
+            .overlay.active {
+                display: block;
             }
 
             .header {
+                padding-top: 70px;
                 flex-direction: column;
                 gap: 15px;
-                padding: 80px 20px 20px;
-                text-align: center;
-            }
-
-            .header-left h1 {
-                font-size: 22px;
-            }
-
-            .header-left p {
-                font-size: 14px;
-            }
-
-            .username-container {
-                padding: 10px 15px;
-                gap: 10px;
-            }
-
-            .username {
-                font-size: 14px;
-            }
-
-            .profile-logo {
-                width: 35px;
-                height: 35px;
-            }
-
-            .dashboard-content {
-                padding: 20px 15px;
-            }
-
-            .welcome-card {
-                padding: 25px 20px;
-                border-radius: 15px;
-            }
-
-            .welcome-card h2 {
-                font-size: 24px;
-            }
-
-            .welcome-card p {
-                font-size: 16px;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-
-            .stat-card {
-                padding: 20px;
-            }
-
-            .stat-card h3 {
-                font-size: 20px;
-            }
-
-            .stat-card .number {
-                font-size: 32px;
-            }
-
-            .logo {
-                padding: 25px 15px;
-                font-size: 20px;
-                letter-spacing: 1px;
-            }
-
-            .menu-section {
-                padding: 15px;
-            }
-
-            .menu-btn, .dropdown-btn {
-                padding: 12px 15px;
-                font-size: 14px;
-            }
-
-            .dropdown-content a {
-                padding: 10px 15px;
-                font-size: 14px;
-            }
-
-            .logout-section {
-                padding: 15px;
-            }
-
-            .logout-btn {
-                padding: 12px;
-                font-size: 14px;
-            }
-        }
-
-        /* Extra Small Mobile */
-        @media (max-width: 480px) {
-            .hamburger {
-                top: 15px;
-                left: 15px;
-                padding: 10px;
-            }
-
-            .hamburger span {
-                width: 22px;
-                height: 2.5px;
-            }
-
-            .header {
-                padding: 70px 15px 15px;
-            }
-
-            .header-left h1 {
-                font-size: 20px;
-            }
-
-            .header-left p {
-                font-size: 13px;
-            }
-
-            .welcome-card {
-                padding: 20px 15px;
-            }
-
-            .welcome-card h2 {
-                font-size: 20px;
-            }
-
-            .welcome-card p {
-                font-size: 14px;
-            }
-
-            .stat-card h3 {
-                font-size: 18px;
-            }
-
-            .stat-card .number {
-                font-size: 28px;
-            }
-
-            .dashboard-content {
-                padding: 15px 10px;
-            }
-
-            .logo {
-                font-size: 18px;
-                padding: 20px 10px;
-            }
-
-            .logo::before {
-                font-size: 50px;
-            }
-        }
-
-        /* Landscape Mode untuk Mobile */
-        @media (max-width: 768px) and (orientation: landscape) {
-            .header {
-                flex-direction: row;
-                padding: 15px 20px 15px 70px;
-            }
-
-            .welcome-card {
-                padding: 20px;
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
 </head>
 <body>
-    <!-- Hamburger Menu -->
-    <button class="hamburger" id="hamburger">
+    <!-- Hamburger -->
+    <button class="hamburger" onclick="toggleMenu()">
         <span></span>
         <span></span>
         <span></span>
     </button>
 
     <!-- Overlay -->
-    <div class="overlay" id="overlay"></div>
+    <div class="overlay" onclick="toggleMenu()"></div>
 
-    <div class="container">
-        <div class="sidebar" id="sidebar">
-            <div class="logo">
-                Turnamen Panahan
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="logo">
+            🏹 TURNAMEN PANAHAN
+        </div>
+        
+        <div class="menu-section">
+            <!-- Dashboard -->
+            <div class="menu-item">
+                <a href="dashboard.php">🏠 Dashboard</a>
             </div>
-            
-            <div class="menu-section">
-                <button class="menu-btn"><a href="dashboard.php">🏠 Dashboard</a></button>
 
-                <!-- Dropdown Master Data -->
-                <div class="dropdown">
-                    <button class="dropdown-btn">📊 Master Data ▾</button>
-                    <div class="dropdown-content">
-                        <a href="users.php">👥 Users</a>
-                        <a href="categori.view.php">📋 Kategori</a>
-                        <a href="pertandingan.view.php">🏆 Pertandingan</a>
-                    </div>
+            <!-- Master Data Dropdown -->
+            <div class="menu-item">
+                <button class="dropdown-btn" onclick="toggleDropdown(this)">
+                    📊 Master Data ▾
+                </button>
+                <div class="dropdown-content">
+                    <a href="users.php">👥 Users</a>
+                    <a href="categori.view.php">📋 Kategori</a>
+                    <a href="pertandingan.view.php">🏆 Pertandingan</a>
                 </div>
-
-                <button class="menu-btn"><a href="kegiatan.view.php">📅 Kegiatan</a></button>
-                <button class="menu-btn"><a href="peserta.view.php">👨‍👩‍👧‍👦 Peserta</a></button>
-                <button class="menu-btn"><a href="statistik.php">📝 Statistik</a></button>
             </div>
 
-            <div class="logout-section">
-                <a href="logout.php" class="logout-btn" onclick="return confirm('Yakin ingin logout?')">
-                    🚪 Logout
-                </a>
+            <!-- Kegiatan -->
+            <div class="menu-item">
+                <a href="kegiatan.view.php">📅 Kegiatan</a>
+            </div>
+
+            <!-- Peserta -->
+            <div class="menu-item">
+                <a href="peserta.view.php">👨‍👩‍👧‍👦 Peserta</a>
+            </div>
+
+            <!-- Statistik -->
+            <div class="menu-item">
+                <a href="statistik.php">📝 Statistik</a>
             </div>
         </div>
 
-        <div class="main-content">
-            <div class="header">
-                <div class="header-left">
-                    <h1>Dashboard <?php echo ucfirst($role); ?></h1>
-                    <p>Sistem Pendaftaran Turnamen Panahan</p>
-                </div>
-                <div class="username-container">
-                    <span class="username"><?php echo htmlspecialchars($name); ?></span>
-                    <img src="angzay.png" alt="Profile" class="profile-logo" onerror="this.style.display='none';">
-                </div>
-            </div>
-            
-            <div class="dashboard-content">
-                <div class="welcome-card">
-                    <h2>🎯 Selamat Datang, <?php echo htmlspecialchars($name); ?>!</h2>
-                    <p>Anda Sekarang Berada di Dashboard Turnamen Panahan</p>
-                </div>
+        <div class="logout-section">
+            <a href="logout.php" class="logout-btn" onclick="return confirm('Yakin ingin logout?')">
+                🚪 Logout
+            </a>
+        </div>
+    </div>
 
-                <!-- Uncomment jika ingin menampilkan statistik -->
-                <!-- <div class="stats-grid">
-                    <div class="stat-card">
-                        <h3>Total Peserta</h3>
-                        <div class="number">127</div>
-                        <p>Peserta terdaftar</p>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <h3>Pertandingan Aktif</h3>
-                        <div class="number">8</div>
-                        <p>Sedang berlangsung</p>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <h3>Kategori</h3>
-                        <div class="number">12</div>
-                        <p>Kategori tersedia</p>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <h3>Kegiatan Bulan Ini</h3>
-                        <div class="number">5</div>
-                        <p>Event terjadwal</p>
-                    </div>
-                </div> -->
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <div class="header-left">
+                <h1>Dashboard <?php echo ucfirst($role); ?></h1>
+                <p>Sistem Pendaftaran Turnamen Panahan</p>
+            </div>
+            <div class="username-container">
+                <span><?php echo htmlspecialchars($name); ?></span>
+                <img src="angzay.png" alt="Profile" class="profile-logo" onerror="this.style.display='none';">
+            </div>
+        </div>
+        
+        <div class="dashboard-content">
+            <div class="welcome-card">
+                <h2>🎯 Selamat Datang, <?php echo htmlspecialchars($name); ?>!</h2>
+                <p>Anda Sekarang Berada di Dashboard Turnamen Panahan</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Hamburger Menu Toggle
-        const hamburger = document.getElementById('hamburger');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
+        // Toggle Dropdown
+        function toggleDropdown(button) {
+            const content = button.nextElementSibling;
+            const allDropdowns = document.querySelectorAll('.dropdown-content');
+            
+            // Close all dropdowns
+            allDropdowns.forEach(d => {
+                if (d !== content) {
+                    d.classList.remove('active');
+                }
+            });
+            
+            // Toggle current
+            content.classList.toggle('active');
+            
+            // Change arrow
+            if (content.classList.contains('active')) {
+                button.textContent = button.textContent.replace('▾', '▴');
+            } else {
+                button.textContent = button.textContent.replace('▴', '▾');
+            }
+        }
 
-        function toggleSidebar() {
-            hamburger.classList.toggle('active');
+        // Toggle Mobile Menu
+        function toggleMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.overlay');
+            
             sidebar.classList.toggle('active');
             overlay.classList.toggle('active');
         }
 
-        hamburger.addEventListener('click', toggleSidebar);
-        overlay.addEventListener('click', toggleSidebar);
-
-        // Close sidebar when clicking menu item on mobile
+        // Close menu when clicking menu item on mobile
         if (window.innerWidth <= 768) {
-            document.querySelectorAll('.menu-btn a, .dropdown-content a').forEach(link => {
-                link.addEventListener('click', () => {
-                    toggleSidebar();
-                });
+            document.querySelectorAll('.menu-item a, .dropdown-content a').forEach(link => {
+                link.addEventListener('click', toggleMenu);
             });
         }
-
-        // Enhanced dropdown functionality
-        document.querySelectorAll('.dropdown-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const content = btn.nextElementSibling;
-                const isOpen = content.style.display === 'flex';
-                
-                // Close all other dropdowns
-                document.querySelectorAll('.dropdown-content').forEach(dc => {
-                    dc.style.display = 'none';
-                });
-                document.querySelectorAll('.dropdown-btn').forEach(db => {
-                    db.innerHTML = db.innerHTML.replace('▴', '▾');
-                });
-                
-                // Toggle current dropdown
-                if (!isOpen) {
-                    content.style.display = 'flex';
-                    btn.innerHTML = btn.innerHTML.replace('▾', '▴');
-                }
-            });
-        });
-
-        // Add smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                }
-            });
-        });
-
-        // Add loading animation for menu items
-        document.querySelectorAll('.menu-btn, .dropdown-content a').forEach(item => {
-            item.addEventListener('click', function(e) {
-                if (this.tagName === 'A' || this.querySelector('a')) {
-                    const originalText = this.textContent;
-                    this.style.opacity = '0.7';
-                    setTimeout(() => {
-                        this.style.opacity = '1';
-                    }, 300);
-                }
-            });
-        });
-
-        // Simulate real-time data updates (jika statistik aktif)
-        function updateStats() {
-            const numbers = document.querySelectorAll('.number');
-            numbers.forEach(num => {
-                const currentValue = parseInt(num.textContent);
-                const change = Math.floor(Math.random() * 3) - 1;
-                if (currentValue + change > 0) {
-                    num.textContent = currentValue + change;
-                    if (change > 0) {
-                        num.style.color = '#00b894';
-                        setTimeout(() => num.style.color = '#0984e3', 1000);
-                    }
-                }
-            });
-        }
-
-        // Update stats every 30 seconds (jika statistik aktif)
-        // setInterval(updateStats, 30000);
-
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 768) {
-                sidebar.classList.remove('active');
-                hamburger.classList.remove('active');
-                overlay.classList.remove('active');
-            }
-        });
-
-        // Prevent body scroll when sidebar is open on mobile
-        const body = document.body;
-        const observer = new MutationObserver(() => {
-            if (sidebar.classList.contains('active') && window.innerWidth <= 768) {
-                body.style.overflow = 'hidden';
-            } else {
-                body.style.overflow = '';
-            }
-        });
-
-        observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
     </script>
 </body>
 </html>
