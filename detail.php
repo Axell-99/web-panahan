@@ -2539,37 +2539,42 @@ h3 {
     }
 
     .styled-table {
-        font-size: 12px;
-        min-width: 480px;
+        font-size: 11px;
+        min-width: 100%;
     }
     
     .styled-table thead th,
     .styled-table tbody td {
-        padding: 10px 10px;
+        padding: 8px 6px;
     }
 
     .styled-table thead th {
         font-size: 10px;
     }
+
+    .styled-table tbody td:first-child {
+        width: 40px;
+    }
     
     .btn {
-        padding: 6px 10px;
-        font-size: 10px;
-        margin-right: 3px;
+        padding: 5px 8px;
+        font-size: 9px;
+        margin-right: 2px;
         margin-bottom: 3px;
+        display: inline-block;
     }
 
     .header-flex {
         flex-direction: column;
         gap: 8px;
-        align-items: flex-start;
+        align-items: stretch;
     }
 
     .add-link {
         width: 100%;
         text-align: center;
         display: block;
-        padding: 8px 12px;
+        padding: 10px 12px;
         font-size: 13px;
     }
 
@@ -2581,6 +2586,11 @@ h3 {
     .create-btn {
         padding: 13px;
         font-size: 15px;
+    }
+
+    .table-wrapper {
+        margin: 0.5rem 0;
+        border-radius: 8px;
     }
 }
 
@@ -2669,24 +2679,33 @@ h3 {
     }
 
     .styled-table {
-        font-size: 11px;
-        min-width: 420px;
+        font-size: 10px;
+        min-width: 100%;
     }
     
     .styled-table thead th,
     .styled-table tbody td {
-        padding: 8px 6px;
+        padding: 7px 4px;
     }
 
     .styled-table thead th {
         font-size: 9px;
     }
+
+    .styled-table tbody td:first-child {
+        width: 35px;
+    }
+
+    .styled-table tbody td:nth-child(2) {
+        font-size: 9px;
+    }
     
     .btn {
-        padding: 5px 8px;
-        font-size: 9px;
+        padding: 4px 6px;
+        font-size: 8px;
         margin-right: 2px;
         margin-bottom: 2px;
+        border-radius: 6px;
     }
 
     .player-header {
@@ -2703,6 +2722,15 @@ h3 {
     }
 
     .x-count {
+        font-size: 12px;
+    }
+
+    h3 {
+        font-size: 16px;
+    }
+
+    .add-link {
+        padding: 9px 12px;
         font-size: 12px;
     }
 }
@@ -2833,18 +2861,18 @@ h3 {
     }
 
     .styled-table {
-        font-size: 10px;
-        min-width: 380px;
+        font-size: 9px;
+        min-width: 100%;
     }
     
     .styled-table thead th,
     .styled-table tbody td {
-        padding: 7px 5px;
+        padding: 6px 3px;
     }
 
     .styled-table thead th {
         font-size: 8px;
-        padding: 9px 5px;
+        padding: 8px 3px;
     }
 
     .styled-table thead th:first-child {
@@ -2854,27 +2882,42 @@ h3 {
     .styled-table thead th:last-child {
         border-radius: 0 8px 0 0;
     }
+
+    .styled-table tbody td:first-child {
+        width: 30px;
+        font-size: 8px;
+    }
+
+    .styled-table tbody td:nth-child(2) {
+        font-size: 8px;
+    }
+
+    .styled-table tbody td:nth-child(3),
+    .styled-table tbody td:nth-child(4) {
+        font-size: 8px;
+    }
     
     .btn {
-        padding: 4px 7px;
-        font-size: 8px;
-        margin-right: 2px;
+        padding: 3px 5px;
+        font-size: 7px;
+        margin-right: 1px;
         margin-bottom: 2px;
         white-space: nowrap;
+        border-radius: 4px;
     }
 
     .add-link {
-        padding: 7px 10px;
+        padding: 8px 10px;
         font-size: 11px;
     }
 
     h3 {
-        font-size: 15px;
+        font-size: 14px;
     }
 
     .table-empty {
         padding: 25px 12px;
-        font-size: 12px;
+        font-size: 11px;
     }
 
     .table-empty::before {
@@ -2888,7 +2931,12 @@ h3 {
 
     .alert {
         padding: 10px;
-        font-size: 12px;
+        font-size: 11px;
+    }
+
+    .table-wrapper {
+        border-radius: 8px;
+        padding: 0;
     }
 }
 
@@ -2954,23 +3002,40 @@ h3 {
     }
 
     .styled-table {
-        min-width: 320px;
-        font-size: 9px;
+        min-width: 100%;
+        font-size: 8px;
     }
 
     .styled-table thead th,
     .styled-table tbody td {
-        padding: 6px 4px;
+        padding: 5px 2px;
     }
 
     .styled-table thead th {
         font-size: 7px;
+        letter-spacing: 0.3px;
+    }
+
+    .styled-table tbody td:first-child {
+        width: 25px;
+        font-size: 7px;
+    }
+
+    .styled-table tbody td:nth-child(2) {
+        font-size: 7px;
+    }
+
+    .styled-table tbody td:nth-child(3),
+    .styled-table tbody td:nth-child(4) {
+        font-size: 7px;
     }
 
     .btn {
-        padding: 3px 5px;
-        font-size: 7px;
-        border-radius: 4px;
+        padding: 2px 4px;
+        font-size: 6px;
+        border-radius: 3px;
+        margin-right: 1px;
+        margin-bottom: 1px;
     }
 
     .player-header {
@@ -2996,6 +3061,15 @@ h3 {
 
     .peserta-count {
         font-size: 14px;
+    }
+
+    h3 {
+        font-size: 13px;
+    }
+
+    .add-link {
+        padding: 7px 8px;
+        font-size: 10px;
     }
 }
 
@@ -3038,7 +3112,7 @@ h3 {
         box-shadow: none;
     }
 }
-    </style>
+</style>
         
     </head>
     <body>
