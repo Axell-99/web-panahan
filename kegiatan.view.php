@@ -173,6 +173,7 @@ while ($row = $result->fetch_assoc()) {
             text-decoration: none;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             font-size: 14px;
             font-weight: 600;
@@ -215,13 +216,14 @@ while ($row = $result->fetch_assoc()) {
         .btn-info:hover {
             background: #2563eb;
         }
+        
         .btn-iya {
             background: #5c20acff;
             color: white;
         }
 
         .btn-iya:hover {
-            background: #5c20acff;
+            background: #4a1a8d;
         }
 
         .btn-warning {
@@ -265,6 +267,7 @@ while ($row = $result->fetch_assoc()) {
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
+        /* Desktop Table */
         .table-container {
             background: white;
             border-radius: 16px;
@@ -314,6 +317,75 @@ while ($row = $result->fetch_assoc()) {
             font-size: 13px;
         }
 
+        /* Mobile Card Layout */
+        .mobile-cards {
+            display: none;
+        }
+
+        .card-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+        .card-number {
+            background: #667eea;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .card-title {
+            flex: 1;
+            margin-left: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a202c;
+            line-height: 1.4;
+        }
+
+        .card-body {
+            margin-bottom: 15px;
+        }
+
+        .card-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .card-actions .btn {
+            width: 100%;
+            font-size: 12px;
+            padding: 10px 12px;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -324,6 +396,7 @@ while ($row = $result->fetch_assoc()) {
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
+            overflow-y: auto;
         }
 
         .modal-content {
@@ -512,48 +585,105 @@ while ($row = $result->fetch_assoc()) {
             font-size: 14px;
         }
 
+        /* Responsive Styles */
         @media (max-width: 768px) {
             body {
-                padding: 15px;
+                padding: 10px;
             }
 
-            .page-header, .controls-section, .table-container {
+            .page-header {
                 padding: 20px;
             }
 
             h1 {
-                font-size: 24px;
+                font-size: 22px;
+                margin-top: 8px;
+            }
+
+            .back-link {
+                font-size: 13px;
             }
 
             .controls-section {
+                padding: 15px;
                 flex-direction: column;
                 align-items: stretch;
+                gap: 12px;
+            }
+
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
             }
 
             .search-box {
                 max-width: 100%;
-            }
-
-            table {
-                font-size: 13px;
-            }
-
-            th, td {
-                padding: 12px 14px;
-            }
-
-            .actions {
                 flex-direction: column;
             }
 
-            .actions .btn {
+            .search-box input {
                 width: 100%;
-                justify-content: center;
+            }
+
+            .search-box .btn {
+                width: 100%;
+            }
+
+            /* Hide table, show cards on mobile */
+            .table-container {
+                display: none;
+            }
+
+            .mobile-cards {
+                display: block;
+            }
+
+            .modal {
+                padding: 10px;
             }
 
             .modal-content {
-                padding: 25px;
+                padding: 20px;
                 margin: 20px auto;
+                width: 95%;
+                max-height: 90vh;
+            }
+
+            .modal-content h2 {
+                font-size: 20px;
+                margin-bottom: 20px;
+            }
+
+            .form-buttons {
+                flex-direction: column-reverse;
+                gap: 10px;
+            }
+
+            .form-buttons .btn {
+                width: 100%;
+            }
+
+            .checkbox-group {
+                max-height: 240px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 20px;
+            }
+
+            .card-item {
+                padding: 15px;
+            }
+
+            .card-title {
+                font-size: 15px;
+            }
+
+            .category-badge {
+                font-size: 11px;
+                padding: 4px 10px;
             }
         }
     </style>
@@ -575,6 +705,7 @@ while ($row = $result->fetch_assoc()) {
             </div>
         </div>
 
+        <!-- Desktop Table -->
         <div class="table-container">
             <table>
                 <thead>
@@ -617,6 +748,38 @@ while ($row = $result->fetch_assoc()) {
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Mobile Cards -->
+        <div class="mobile-cards" id="mobileCards">
+            <?php if (empty($kegiatanData)): ?>
+                <div class="no-data">Tidak ada data kegiatan</div>
+            <?php else: ?>
+                <?php foreach ($kegiatanData as $index => $item): ?>
+                    <div class="card-item" data-id="<?= $item['id'] ?>">
+                        <div class="card-header">
+                            <div class="card-number"><?= $index + 1 ?></div>
+                            <div class="card-title"><?= htmlspecialchars($item['nama']) ?></div>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-label">Kategori</div>
+                            <?php if (empty($item['category_names'])): ?>
+                                <span class="text-muted">Belum ada kategori</span>
+                            <?php else: ?>
+                                <?php foreach ($item['category_names'] as $categoryName): ?>
+                                    <span class="category-badge"><?= htmlspecialchars($categoryName) ?></span>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                        <div class="card-actions">
+                            <a href="pendaftaran.php?id=<?php echo $item['id']?>" class="btn btn-iya">Pendaftaran</a>
+                            <a href="detail.php?id=<?php echo $item['id']?>" class="btn btn-info">Detail</a>
+                            <button class="btn btn-warning" onclick="editData(<?= $item['id'] ?>)">Edit</button>
+                            <button class="btn btn-danger" onclick="deleteData(<?= $item['id'] ?>)">Hapus</button>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </div>
 
         <!-- Modal -->
@@ -710,7 +873,6 @@ function deleteData(id) {
 
 function searchData() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const tableBody = document.getElementById('tableBody');
     
     if (searchTerm === '') {
         displayData(allData);
@@ -724,9 +886,12 @@ function searchData() {
 
 function displayData(data) {
     const tableBody = document.getElementById('tableBody');
+    const mobileCards = document.getElementById('mobileCards');
     
+    // Update desktop table
     if (data.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="4" class="no-data">Tidak ada data yang ditemukan</td></tr>';
+        mobileCards.innerHTML = '<div class="no-data">Tidak ada data yang ditemukan</div>';
         return;
     }
     
@@ -747,13 +912,44 @@ function displayData(data) {
                 <td>${categoryBadges}</td>
                 <td>
                     <div class="actions">
-                        <a href="pendaftaran.php?id=${item.id}" class="btn btn-info">Pendaftaran</a>
+                        <a href="pendaftaran.php?id=${item.id}" class="btn btn-iya">Pendaftaran</a>
                         <a href="detail.php?id=${item.id}" class="btn btn-info">Detail</a>
                         <button class="btn btn-warning" onclick="editData(${item.id})">Edit</button>
                         <button class="btn btn-danger" onclick="deleteData(${item.id})">Hapus</button>
                     </div>
                 </td>
             </tr>
+        `;
+    }).join('');
+    
+    // Update mobile cards
+    mobileCards.innerHTML = data.map((item, index) => {
+        let categoryBadges = '';
+        if (item.category_names && item.category_names.length > 0) {
+            categoryBadges = item.category_names.map(name => 
+                `<span class="category-badge">${name}</span>`
+            ).join(' ');
+        } else {
+            categoryBadges = '<span class="text-muted">Belum ada kategori</span>';
+        }
+        
+        return `
+            <div class="card-item" data-id="${item.id}">
+                <div class="card-header">
+                    <div class="card-number">${index + 1}</div>
+                    <div class="card-title">${item.nama}</div>
+                </div>
+                <div class="card-body">
+                    <div class="card-label">Kategori</div>
+                    ${categoryBadges}
+                </div>
+                <div class="card-actions">
+                    <a href="pendaftaran.php?id=${item.id}" class="btn btn-iya">Pendaftaran</a>
+                    <a href="detail.php?id=${item.id}" class="btn btn-info">Detail</a>
+                    <button class="btn btn-warning" onclick="editData(${item.id})">Edit</button>
+                    <button class="btn btn-danger" onclick="deleteData(${item.id})">Hapus</button>
+                </div>
+            </div>
         `;
     }).join('');
 }

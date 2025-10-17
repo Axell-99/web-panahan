@@ -18,6 +18,8 @@ $role = $_SESSION['role'] ?? 'user';
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Turnamen Panahan</title>
     <style>
         * {
@@ -29,15 +31,77 @@ $role = $_SESSION['role'] ?? 'user';
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
-            height: 100vh;
+            min-height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
         .container {
             display: flex;
             width: 100%;
             backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        /* Hamburger Menu */
+        .hamburger {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .hamburger:hover {
+            transform: scale(1.05);
+        }
+
+        .hamburger span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            background: #2d3436;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(8px, 8px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        /* Overlay untuk mobile */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.active {
+            display: block;
+            opacity: 1;
         }
 
         .sidebar {
@@ -50,6 +114,8 @@ $role = $_SESSION['role'] ?? 'user';
             border-right: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
+            position: relative;
+            z-index: 1000;
         }
 
         .logo {
@@ -78,6 +144,7 @@ $role = $_SESSION['role'] ?? 'user';
         .menu-section {
             padding: 20px;
             flex: 1;
+            overflow-y: auto;
         }
 
         .menu-btn, .dropdown-btn {
@@ -122,6 +189,16 @@ $role = $_SESSION['role'] ?? 'user';
             text-decoration: none;
             display: block;
             width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .menu-btn {
+            padding: 0;
+        }
+
+        .menu-btn a {
+            padding: 15px 20px;
         }
 
         .dropdown {
@@ -172,6 +249,7 @@ $role = $_SESSION['role'] ?? 'user';
             padding: 0;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
+            min-width: 0;
         }
 
         .header {
@@ -344,46 +422,255 @@ $role = $_SESSION['role'] ?? 'user';
             box-shadow: 0 8px 25px rgba(255, 118, 117, 0.4);
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 250px;
-            }
-            
-            .header {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
         /* Scrollbar Styling */
-        .dashboard-content::-webkit-scrollbar {
+        .dashboard-content::-webkit-scrollbar,
+        .menu-section::-webkit-scrollbar {
             width: 6px;
         }
 
-        .dashboard-content::-webkit-scrollbar-track {
+        .dashboard-content::-webkit-scrollbar-track,
+        .menu-section::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
         }
 
-        .dashboard-content::-webkit-scrollbar-thumb {
+        .dashboard-content::-webkit-scrollbar-thumb,
+        .menu-section::-webkit-scrollbar-thumb {
             background: linear-gradient(135deg, #74b9ff, #0984e3);
             border-radius: 10px;
         }
 
-        .dashboard-content::-webkit-scrollbar-thumb:hover {
+        .dashboard-content::-webkit-scrollbar-thumb:hover,
+        .menu-section::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(135deg, #0984e3, #74b9ff);
+        }
+
+        /* Responsive Design untuk Tablet */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 250px;
+            }
+
+            .header-left h1 {
+                font-size: 24px;
+            }
+
+            .welcome-card h2 {
+                font-size: 28px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+
+        /* Responsive Design untuk Mobile */
+        @media (max-width: 768px) {
+            .hamburger {
+                display: block;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                bottom: 0;
+                width: 280px;
+                z-index: 1000;
+                transition: left 0.3s ease;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .main-content {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 80px 20px 20px;
+                text-align: center;
+            }
+
+            .header-left h1 {
+                font-size: 22px;
+            }
+
+            .header-left p {
+                font-size: 14px;
+            }
+
+            .username-container {
+                padding: 10px 15px;
+                gap: 10px;
+            }
+
+            .username {
+                font-size: 14px;
+            }
+
+            .profile-logo {
+                width: 35px;
+                height: 35px;
+            }
+
+            .dashboard-content {
+                padding: 20px 15px;
+            }
+
+            .welcome-card {
+                padding: 25px 20px;
+                border-radius: 15px;
+            }
+
+            .welcome-card h2 {
+                font-size: 24px;
+            }
+
+            .welcome-card p {
+                font-size: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-card h3 {
+                font-size: 20px;
+            }
+
+            .stat-card .number {
+                font-size: 32px;
+            }
+
+            .logo {
+                padding: 25px 15px;
+                font-size: 20px;
+                letter-spacing: 1px;
+            }
+
+            .menu-section {
+                padding: 15px;
+            }
+
+            .menu-btn, .dropdown-btn {
+                padding: 12px 15px;
+                font-size: 14px;
+            }
+
+            .dropdown-content a {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            .logout-section {
+                padding: 15px;
+            }
+
+            .logout-btn {
+                padding: 12px;
+                font-size: 14px;
+            }
+        }
+
+        /* Extra Small Mobile */
+        @media (max-width: 480px) {
+            .hamburger {
+                top: 15px;
+                left: 15px;
+                padding: 10px;
+            }
+
+            .hamburger span {
+                width: 22px;
+                height: 2.5px;
+            }
+
+            .header {
+                padding: 70px 15px 15px;
+            }
+
+            .header-left h1 {
+                font-size: 20px;
+            }
+
+            .header-left p {
+                font-size: 13px;
+            }
+
+            .welcome-card {
+                padding: 20px 15px;
+            }
+
+            .welcome-card h2 {
+                font-size: 20px;
+            }
+
+            .welcome-card p {
+                font-size: 14px;
+            }
+
+            .stat-card h3 {
+                font-size: 18px;
+            }
+
+            .stat-card .number {
+                font-size: 28px;
+            }
+
+            .dashboard-content {
+                padding: 15px 10px;
+            }
+
+            .logo {
+                font-size: 18px;
+                padding: 20px 10px;
+            }
+
+            .logo::before {
+                font-size: 50px;
+            }
+        }
+
+        /* Landscape Mode untuk Mobile */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .header {
+                flex-direction: row;
+                padding: 15px 20px 15px 70px;
+            }
+
+            .welcome-card {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Hamburger Menu -->
+    <button class="hamburger" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
     <div class="container">
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="logo">
                 Turnamen Panahan
             </div>
@@ -431,6 +718,7 @@ $role = $_SESSION['role'] ?? 'user';
                     <p>Anda Sekarang Berada di Dashboard Turnamen Panahan</p>
                 </div>
 
+                <!-- Uncomment jika ingin menampilkan statistik -->
                 <!-- <div class="stats-grid">
                     <div class="stat-card">
                         <h3>Total Peserta</h3>
@@ -454,13 +742,36 @@ $role = $_SESSION['role'] ?? 'user';
                         <h3>Kegiatan Bulan Ini</h3>
                         <div class="number">5</div>
                         <p>Event terjadwal</p>
-                    </div> -->
-                </div>
+                    </div>
+                </div> -->
             </div>
         </div>
     </div>
 
     <script>
+        // Hamburger Menu Toggle
+        const hamburger = document.getElementById('hamburger');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        function toggleSidebar() {
+            hamburger.classList.toggle('active');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        hamburger.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+
+        // Close sidebar when clicking menu item on mobile
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.menu-btn a, .dropdown-content a').forEach(link => {
+                link.addEventListener('click', () => {
+                    toggleSidebar();
+                });
+            });
+        }
+
         // Enhanced dropdown functionality
         document.querySelectorAll('.dropdown-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -500,7 +811,6 @@ $role = $_SESSION['role'] ?? 'user';
         document.querySelectorAll('.menu-btn, .dropdown-content a').forEach(item => {
             item.addEventListener('click', function(e) {
                 if (this.tagName === 'A' || this.querySelector('a')) {
-                    // Add loading state
                     const originalText = this.textContent;
                     this.style.opacity = '0.7';
                     setTimeout(() => {
@@ -510,12 +820,12 @@ $role = $_SESSION['role'] ?? 'user';
             });
         });
 
-        // Simulate real-time data updates
+        // Simulate real-time data updates (jika statistik aktif)
         function updateStats() {
             const numbers = document.querySelectorAll('.number');
             numbers.forEach(num => {
                 const currentValue = parseInt(num.textContent);
-                const change = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+                const change = Math.floor(Math.random() * 3) - 1;
                 if (currentValue + change > 0) {
                     num.textContent = currentValue + change;
                     if (change > 0) {
@@ -526,8 +836,29 @@ $role = $_SESSION['role'] ?? 'user';
             });
         }
 
-        // Update stats every 30 seconds
-        setInterval(updateStats, 30000);
+        // Update stats every 30 seconds (jika statistik aktif)
+        // setInterval(updateStats, 30000);
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('active');
+                hamburger.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        });
+
+        // Prevent body scroll when sidebar is open on mobile
+        const body = document.body;
+        const observer = new MutationObserver(() => {
+            if (sidebar.classList.contains('active') && window.innerWidth <= 768) {
+                body.style.overflow = 'hidden';
+            } else {
+                body.style.overflow = '';
+            }
+        });
+
+        observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
     </script>
 </body>
 </html>
