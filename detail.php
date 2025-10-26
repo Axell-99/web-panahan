@@ -1803,6 +1803,8 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Setup Scorecard Panahan - <?= htmlspecialchars($kategoriData['name']) ?></title>
+        <!-- Tambahan CDN untuk Export Excel -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
         <style>
         * {
     margin: 0;
@@ -2436,6 +2438,33 @@ h3 {
 .styled-table tbody tr:nth-child(4) { animation-delay: 0.2s; }
 .styled-table tbody tr:nth-child(5) { animation-delay: 0.25s; }
 
+/* TAMBAHAN CSS UNTUK TOMBOL EXPORT */
+.export-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 /* ============================================
    RESPONSIVE BREAKPOINTS
    ============================================ */
@@ -2592,6 +2621,21 @@ h3 {
         margin: 0.5rem 0;
         border-radius: 8px;
     }
+
+    .header-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .header-actions {
+        width: 100%;
+    }
+
+    .export-btn, .add-link {
+        flex: 1;
+        text-align: center;
+        justify-content: center;
+    }
 }
 
 /* Mobile - 640px and below */
@@ -2730,6 +2774,11 @@ h3 {
     }
 
     .add-link {
+        padding: 9px 12px;
+        font-size: 12px;
+    }
+
+    .export-btn {
         padding: 9px 12px;
         font-size: 12px;
     }
@@ -2911,6 +2960,11 @@ h3 {
         font-size: 11px;
     }
 
+    .export-btn {
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+
     h3 {
         font-size: 14px;
     }
@@ -3071,6 +3125,11 @@ h3 {
         padding: 7px 8px;
         font-size: 10px;
     }
+
+    .export-btn {
+        padding: 7px 8px;
+        font-size: 10px;
+    }
 }
 
 /* Print styles */
@@ -3082,7 +3141,8 @@ h3 {
 
     .back-btn,
     .edit-btn,
-    .add-link {
+    .add-link,
+    .export-btn {
         display: none;
     }
 
@@ -3161,10 +3221,13 @@ h3 {
                     <div class="setup-form" id="setupForm">
                         <div class="header-bar">
                             <button class="back-btn" onclick="goBack()">←</button>
-                            <a href="detail.php?action=scorecard&resource=form&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>" class="add-link">Tambah data +</a>
+                            <div class="header-actions">
+                                <a href="detail.php?action=scorecard&resource=form&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>" class="add-link">Tambah data +</a>
+                                <button onclick="exportTableToExcel()" class="export-btn">📊 Export Excel</button>
+                            </div>
                         </div>
                         <div class="table-wrapper">
-                            <table class="styled-table">
+                            <table class="styled-table" id="scorecardTable">
                                 <thead>
                                     <tr>
                                         <th>No</th>
@@ -3202,6 +3265,7 @@ h3 {
                 <div class="header-flex">
                     <a  class="back-btn" href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>">←</a>
                     <h3>Score Board <?= (isset($_GET['rangking'])) ? '(Ranking)' : '' ?></h3>
+                    <button onclick="exportScorecardToExcel()" class="export-btn">📊 Export</button>
                 </div>
                 <div class="scorecard-header">
                     <div class="category-header-info">
@@ -3500,6 +3564,146 @@ h3 {
                 document.getElementById('setupForm').style.display = 'block';
                 document.getElementById('scorecardContainer').style.display = 'none';
                 document.querySelector('.container').style.maxWidth = '500px'; 
+            }
+
+            // FUNGSI EXPORT EXCEL UNTUK TABEL DAFTAR SCORECARD
+            function exportTableToExcel() {
+                const table = document.getElementById('scorecardTable');
+                const wb = XLSX.utils.book_new();
+                
+                // Clone tabel dan hapus kolom aksi
+                const tableClone = table.cloneNode(true);
+                const rows = tableClone.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('th, td');
+                    if (cells.length > 0) {
+                        cells[cells.length - 1].remove(); // Hapus kolom terakhir (Aksi)
+                    }
+                });
+                
+                const ws = XLSX.utils.table_to_sheet(tableClone);
+                
+                // Set lebar kolom
+                ws['!cols'] = [
+                    { wch: 5 },  // No
+                    { wch: 20 }, // Tanggal
+                    { wch: 15 }, // Jumlah Sesi
+                    { wch: 20 }  // Jumlah Anak Panah
+                ];
+                
+                XLSX.utils.book_append_sheet(wb, ws, "Daftar Scorecard");
+                
+                const fileName = `Daftar_Scorecard_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+            }
+
+            // FUNGSI EXPORT EXCEL UNTUK SCORECARD DETAIL
+            function exportScorecardToExcel() {
+                const wb = XLSX.utils.book_new();
+                
+                // Buat array untuk menampung semua data
+                const allData = [];
+                
+                // Header utama
+                const mainHeaders = ['No', 'Nama Peserta'];
+                
+                // Dapatkan jumlah sesi dari peserta pertama
+                const firstPlayerSection = document.querySelector('.player-section');
+                const firstTable = firstPlayerSection ? firstPlayerSection.querySelector('.score-table') : null;
+                let jumlahSesi = 0;
+                let jumlahPanah = 0;
+                
+                if (firstTable) {
+                    const sessionRows = firstTable.querySelectorAll('tbody tr');
+                    jumlahSesi = sessionRows.length;
+                    
+                    // Hitung jumlah panah dari kolom (total kolom - sesi - total - end)
+                    const headerCols = firstTable.querySelectorAll('thead tr:first-child th');
+                    let totalCols = 0;
+                    headerCols.forEach(th => {
+                        const colspan = th.getAttribute('colspan');
+                        if (colspan) {
+                            totalCols += parseInt(colspan);
+                        } else if (!th.hasAttribute('rowspan')) {
+                            totalCols += 1;
+                        }
+                    });
+                    jumlahPanah = totalCols - 3; // Kurangi kolom Sesi, Total, End
+                }
+                
+                // Buat header untuk setiap bantalan/sesi
+                for (let i = 1; i <= jumlahSesi; i++) {
+                    mainHeaders.push(`Bantalan ${i}`);
+                }
+                mainHeaders.push('Total Keseluruhan');
+                
+                <?php if(isset($_GET['rangking'])) { ?>
+                mainHeaders.push('X Score');
+                mainHeaders.push('Peringkat');
+                <?php } ?>
+                
+                allData.push(mainHeaders);
+                
+                // Isi data untuk setiap peserta
+                pesertaData.forEach((peserta, index) => {
+                    const playerId = `peserta_${peserta.id}`;
+                    const playerSection = document.querySelectorAll('.player-section')[index];
+                    
+                    if (playerSection) {
+                        const row = [
+                            index + 1,
+                            peserta.nama_peserta
+                        ];
+                        
+                        // Ambil nilai total per sesi (End value)
+                        for (let s = 1; s <= jumlahSesi; s++) {
+                            const totalInput = document.getElementById(`${playerId}_total_a${s}`);
+                            const value = totalInput ? (totalInput.value || '0') : '0';
+                            row.push(value);
+                        }
+                        
+                        // Ambil grand total
+                        const grandTotalEl = document.getElementById(`${playerId}_grand_total`);
+                        const grandTotal = grandTotalEl ? grandTotalEl.textContent.replace(' poin', '') : '0';
+                        row.push(grandTotal);
+                        
+                        <?php if(isset($_GET['rangking'])) { ?>
+                        // Tambahkan X Score dan Peringkat
+                        row.push(peserta.x_score || 0);
+                        row.push(index + 1);
+                        <?php } ?>
+                        
+                        allData.push(row);
+                    }
+                });
+                
+                // Buat worksheet dari array
+                const ws = XLSX.utils.aoa_to_sheet(allData);
+                
+                // Set lebar kolom
+                const colWidths = [
+                    { wch: 5 },  // No
+                    { wch: 25 }  // Nama Peserta
+                ];
+                
+                // Tambahkan lebar untuk kolom bantalan
+                for (let i = 0; i < jumlahSesi; i++) {
+                    colWidths.push({ wch: 12 });
+                }
+                colWidths.push({ wch: 18 }); // Total Keseluruhan
+                
+                <?php if(isset($_GET['rangking'])) { ?>
+                colWidths.push({ wch: 12 }); // X Score
+                colWidths.push({ wch: 12 }); // Peringkat
+                <?php } ?>
+                
+                ws['!cols'] = colWidths;
+                
+                // Tambahkan sheet ke workbook
+                XLSX.utils.book_append_sheet(wb, ws, "Scorecard Lengkap");
+                
+                const fileName = `Scorecard_Lengkap_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
             }
         </script>
     </body>
