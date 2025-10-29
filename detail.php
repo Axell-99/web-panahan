@@ -3567,45 +3567,14 @@ h3 {
             }
 
             // FUNGSI EXPORT EXCEL UNTUK TABEL DAFTAR SCORECARD
-            function exportTableToExcel() {
-                const table = document.getElementById('scorecardTable');
-                const wb = XLSX.utils.book_new();
-                
-                // Clone tabel dan hapus kolom aksi
-                const tableClone = table.cloneNode(true);
-                const rows = tableClone.querySelectorAll('tr');
-                rows.forEach(row => {
-                    const cells = row.querySelectorAll('th, td');
-                    if (cells.length > 0) {
-                        cells[cells.length - 1].remove(); // Hapus kolom terakhir (Aksi)
-                    }
-                });
-                
-                const ws = XLSX.utils.table_to_sheet(tableClone);
-                
-                // Set lebar kolom
-                ws['!cols'] = [
-                    { wch: 5 },  // No
-                    { wch: 20 }, // Tanggal
-                    { wch: 15 }, // Jumlah Sesi
-                    { wch: 20 }  // Jumlah Anak Panah
-                ];
-                
-                XLSX.utils.book_append_sheet(wb, ws, "Daftar Scorecard");
-                
-                const fileName = `Daftar_Scorecard_${new Date().toISOString().split('T')[0]}.xlsx`;
-                XLSX.writeFile(wb, fileName);
-            }
-
             // FUNGSI EXPORT EXCEL UNTUK SCORECARD DETAIL
+// FUNGSI EXPORT EXCEL UNTUK SCORECARD DETAIL
             function exportScorecardToExcel() {
                 const wb = XLSX.utils.book_new();
                 
-                // Buat array untuk menampung semua data
-                const allData = [];
-                
-                // Header utama
-                const mainHeaders = ['No', 'Nama Peserta'];
+                // Dapatkan info kategori dan kegiatan
+                const categoryName = "<?= htmlspecialchars($kategoriData['name']) ?>";
+                const eventName = "<?= htmlspecialchars($kegiatanData['nama_kegiatan']) ?>";
                 
                 // Dapatkan jumlah sesi dari peserta pertama
                 const firstPlayerSection = document.querySelector('.player-section');
@@ -3617,7 +3586,6 @@ h3 {
                     const sessionRows = firstTable.querySelectorAll('tbody tr');
                     jumlahSesi = sessionRows.length;
                     
-                    // Hitung jumlah panah dari kolom (total kolom - sesi - total - end)
                     const headerCols = firstTable.querySelectorAll('thead tr:first-child th');
                     let totalCols = 0;
                     headerCols.forEach(th => {
@@ -3628,81 +3596,125 @@ h3 {
                             totalCols += 1;
                         }
                     });
-                    jumlahPanah = totalCols - 3; // Kurangi kolom Sesi, Total, End
+                    jumlahPanah = totalCols - 3;
                 }
                 
-                // Buat header untuk setiap bantalan/sesi
+                // ============ SHEET 1: REKAP TOTAL ============
+                const rekapData = [];
+                
+                // Header untuk sheet rekap
+                rekapData.push([categoryName]);
+                rekapData.push([eventName]);
+                rekapData.push([]);
+                
+                const rekapHeaders = ['No', 'Nama'];
                 for (let i = 1; i <= jumlahSesi; i++) {
-                    mainHeaders.push(`Bantalan ${i}`);
+                    rekapHeaders.push(`Rambahan ${i}`);
                 }
-                mainHeaders.push('Total Keseluruhan');
+                rekapHeaders.push('Total');
+                rekapData.push(rekapHeaders);
                 
-                <?php if(isset($_GET['rangking'])) { ?>
-                mainHeaders.push('X Score');
-                mainHeaders.push('Peringkat');
-                <?php } ?>
-                
-                allData.push(mainHeaders);
-                
-                // Isi data untuk setiap peserta
+                // Isi data rekap
                 pesertaData.forEach((peserta, index) => {
                     const playerId = `peserta_${peserta.id}`;
-                    const playerSection = document.querySelectorAll('.player-section')[index];
+                    const row = [
+                        index + 1,
+                        peserta.nama_peserta
+                    ];
                     
-                    if (playerSection) {
-                        const row = [
-                            index + 1,
-                            peserta.nama_peserta
-                        ];
+                    for (let s = 1; s <= jumlahSesi; s++) {
+                        const totalInput = document.getElementById(`${playerId}_total_a${s}`);
+                        const value = totalInput ? (totalInput.value || '0') : '0';
+                        row.push(value);
+                    }
+                    
+                    const grandTotalEl = document.getElementById(`${playerId}_grand_total`);
+                    const grandTotal = grandTotalEl ? grandTotalEl.textContent.replace(' poin', '') : '0';
+                    row.push(grandTotal);
+                    
+                    rekapData.push(row);
+                });
+                
+                const wsRekap = XLSX.utils.aoa_to_sheet(rekapData);
+                
+                // Set lebar kolom untuk sheet rekap
+                const rekapColWidths = [
+                    { wch: 5 },
+                    { wch: 20 }
+                ];
+                for (let i = 0; i < jumlahSesi; i++) {
+                    rekapColWidths.push({ wch: 12 });
+                }
+                rekapColWidths.push({ wch: 12 });
+                wsRekap['!cols'] = rekapColWidths;
+                
+                // ============ SHEET 2: TRAINING (DETAIL PER PESERTA) ============
+                const trainingData = [];
+                
+                pesertaData.forEach((peserta, pesertaIndex) => {
+                    const playerId = `peserta_${peserta.id}`;
+                    
+                    // Header peserta
+                    if (pesertaIndex > 0) {
+                        trainingData.push([]);
+                        trainingData.push([]);
+                    }
+                    
+                    const rankText = typeof peserta.total_score !== 'undefined' ? ` - Juara ${pesertaIndex + 1}` : '';
+                    trainingData.push([`Rank#${pesertaIndex + 1} ${peserta.nama_peserta}${rankText}`]);
+                    
+                    // Header tabel
+                    const detailHeaders = ['Rambahan'];
+                    for (let a = 1; a <= jumlahPanah; a++) {
+                        detailHeaders.push(`Shot ${a}`);
+                    }
+                    detailHeaders.push('Total');
+                    detailHeaders.push('End');
+                    trainingData.push(detailHeaders);
+                    
+                    // Data per sesi
+                    for (let s = 1; s <= jumlahSesi; s++) {
+                        const row = [s];
                         
-                        // Ambil nilai total per sesi (End value)
-                        for (let s = 1; s <= jumlahSesi; s++) {
-                            const totalInput = document.getElementById(`${playerId}_total_a${s}`);
-                            const value = totalInput ? (totalInput.value || '0') : '0';
+                        // Ambil nilai setiap shot
+                        for (let a = 1; a <= jumlahPanah; a++) {
+                            const input = document.getElementById(`${playerId}_a${a}_s${s}`);
+                            const value = input ? (input.value || '') : '';
                             row.push(value);
                         }
                         
-                        // Ambil grand total
-                        const grandTotalEl = document.getElementById(`${playerId}_grand_total`);
-                        const grandTotal = grandTotalEl ? grandTotalEl.textContent.replace(' poin', '') : '0';
-                        row.push(grandTotal);
+                        // Total sesi
+                        const totalInput = document.getElementById(`${playerId}_total_a${s}`);
+                        const totalValue = totalInput ? (totalInput.value || '0') : '0';
+                        row.push(totalValue);
                         
-                        <?php if(isset($_GET['rangking'])) { ?>
-                        // Tambahkan X Score dan Peringkat
-                        row.push(peserta.x_score || 0);
-                        row.push(index + 1);
-                        <?php } ?>
+                        // End (akumulasi)
+                        const endInput = document.getElementById(`${playerId}_end_a${s}`);
+                        const endValue = endInput ? (endInput.value || '0') : '0';
+                        row.push(endValue);
                         
-                        allData.push(row);
+                        trainingData.push(row);
                     }
                 });
                 
-                // Buat worksheet dari array
-                const ws = XLSX.utils.aoa_to_sheet(allData);
+                const wsTraining = XLSX.utils.aoa_to_sheet(trainingData);
                 
-                // Set lebar kolom
-                const colWidths = [
-                    { wch: 5 },  // No
-                    { wch: 25 }  // Nama Peserta
+                // Set lebar kolom untuk sheet training
+                const trainingColWidths = [
+                    { wch: 12 }
                 ];
-                
-                // Tambahkan lebar untuk kolom bantalan
-                for (let i = 0; i < jumlahSesi; i++) {
-                    colWidths.push({ wch: 12 });
+                for (let i = 0; i < jumlahPanah; i++) {
+                    trainingColWidths.push({ wch: 8 });
                 }
-                colWidths.push({ wch: 18 }); // Total Keseluruhan
+                trainingColWidths.push({ wch: 10 });
+                trainingColWidths.push({ wch: 10 });
+                wsTraining['!cols'] = trainingColWidths;
                 
-                <?php if(isset($_GET['rangking'])) { ?>
-                colWidths.push({ wch: 12 }); // X Score
-                colWidths.push({ wch: 12 }); // Peringkat
-                <?php } ?>
+                // Tambahkan kedua sheet ke workbook
+                XLSX.utils.book_append_sheet(wb, wsTraining, "Training");
+                XLSX.utils.book_append_sheet(wb, wsRekap, "Rekap Total");
                 
-                ws['!cols'] = colWidths;
-                
-                // Tambahkan sheet ke workbook
-                XLSX.utils.book_append_sheet(wb, ws, "Scorecard Lengkap");
-                
-                const fileName = `Scorecard_Lengkap_${new Date().toISOString().split('T')[0]}.xlsx`;
+                const fileName = `Scorecard_${categoryName}_${new Date().toISOString().split('T')[0]}.xlsx`;
                 XLSX.writeFile(wb, fileName);
             }
         </script>
