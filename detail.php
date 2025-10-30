@@ -3302,422 +3302,431 @@ h3 {
         </div>
 
         <script>
-            <?php if($_GET['resource'] == 'form') { ?>
-                let now = new Date();
-                let formatted = now.getFullYear() + "-" 
-                    + String(now.getMonth()+1).padStart(2, '0') + "-"
-                    + String(now.getDate()).padStart(2, '0') + " "
-                    + String(now.getHours()).padStart(2, '0') + ":"
-                    + String(now.getMinutes()).padStart(2, '0') + ":"
-                    + String(now.getSeconds()).padStart(2, '0');
+    <?php if($_GET['resource'] == 'form') { ?>
+        let now = new Date();
+        let formatted = now.getFullYear() + "-" 
+            + String(now.getMonth()+1).padStart(2, '0') + "-"
+            + String(now.getDate()).padStart(2, '0') + " "
+            + String(now.getHours()).padStart(2, '0') + ":"
+            + String(now.getMinutes()).padStart(2, '0') + ":"
+            + String(now.getSeconds()).padStart(2, '0');
 
-                document.getElementById("local_time").value = formatted;
+        document.getElementById("local_time").value = formatted;
+    <?php } ?>
+    
+    const pesertaData = <?= json_encode($pesertaList) ?>;
+    <?php if(isset($_GET['rangking'])) { ?>
+        const peserta_score = <?= json_encode($peserta_score) ?>;
+        function tambahAtributById(id, key, value) {
+            const peserta = pesertaData.find(p => p.id === id);
+            if (peserta) {
+                peserta[key] = value;
+            }
+        }
+
+        for(let i = 0; i < peserta_score.length; i++) {
+            tambahAtributById(peserta_score[i]['id'], "total_score", peserta_score[i]['total_score']);
+            tambahAtributById(peserta_score[i]['id'], "x_score", peserta_score[i]['total_x']);
+        }
+
+        pesertaData.sort((a, b) => {
+            if (b.total_score !== a.total_score) {
+                return b.total_score - a.total_score;
+            }
+            return b.x_score - a.x_score;
+        });
+    <?php } ?>
+    
+    <?php if(isset($_GET['scoreboard'])) { ?>
+        openScoreBoard("<?= $show_score_board['jumlah_sesi'] ?>", "<?= $show_score_board['jumlah_anak_panah'] ?>");
+    <?php } ?> 
+    
+    function delete_score_board(kegiatan_id, category_id, id) {
+        if(confirm("Apakah anda yakin akan menghapus data ini?")) {
+            window.location.href = `detail.php?action=scorecard&resource=index&kegiatan_id=${kegiatan_id}&category_id=${category_id}&delete_score_board=${id}`;
+        }
+    }
+
+    <?php 
+        if(isset($mysql_data_score)) {
+            while($jatuh = mysqli_fetch_array($mysql_data_score)) { ?> 
+                document.getElementById("peserta_<?= $jatuh['peserta_id'] ?>_a<?= $jatuh['arrow'] ?>_s<?= $jatuh['session'] ?>").value = "<?= $jatuh['score'] ?>";
+                hitungPerArrow('peserta_<?= $jatuh['peserta_id'] ?>', '<?= $jatuh['arrow'] ?>', '<?= $jatuh['session'] ?>','<?= $show_score_board['jumlah_anak_panah'] ?>')
             <?php } ?>
+        <?php }
+     ?> 
+    
+    function goBack() {
+        window.history.back();
+    }
+
+    function openScoreBoard(jumlahSesi_data, jumlahPanah_data) {
+        const jumlahSesi = parseInt(jumlahSesi_data);
+        const jumlahPanah = parseInt(jumlahPanah_data);
+        document.getElementById('panahCount').textContent = jumlahSesi * jumlahPanah;
+        generatePlayerSections(jumlahSesi, jumlahPanah);
+        document.getElementById('setupForm').style.display = 'none';
+        document.getElementById('scorecardContainer').style.display = 'block';
+        document.querySelector('.container').style.maxWidth = '1200px';
+    }
+
+    function generatePlayerSections(jumlahSesi, jumlahPanah) {
+        const playersContainer = document.getElementById('playersContainer');
+        playersContainer.innerHTML = '';
+
+        pesertaData.forEach((peserta, index) => {
+            const playerId = `peserta_${peserta.id}`;
+            const playerName = peserta.nama_peserta;
             
-            const pesertaData = <?= json_encode($pesertaList) ?>;
-            <?php if(isset($_GET['rangking'])) { ?>
-                const peserta_score = <?= json_encode($peserta_score) ?>;
-                function tambahAtributById(id, key, value) {
-                    const peserta = pesertaData.find(p => p.id === id);
-                    if (peserta) {
-                        peserta[key] = value;
-                    }
-                }
-
-                for(let i = 0; i < peserta_score.length; i++) {
-                    tambahAtributById(peserta_score[i]['id'], "total_score", peserta_score[i]['total_score']);
-                    tambahAtributById(peserta_score[i]['id'], "x_score", peserta_score[i]['total_x']);
-                }
-
-                pesertaData.sort((a, b) => {
-                    if (b.total_score !== a.total_score) {
-                        return b.total_score - a.total_score;
-                    }
-                    return b.x_score - a.x_score;
-                });
-            <?php } ?>
+            const playerSection = document.createElement('div');
+            playerSection.className = 'player-section';
+            playerSection.innerHTML = `
+                <div class="player-header">
+                    ${playerName} (${peserta.jenis_kelamin}) ${typeof peserta.total_score !== 'undefined' ? ` - Juara ${index + 1}` : ''}
+                </div>
+                <div class="score-table-container">
+                    <table class="score-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="width: 60px;">Sesi</th>
+                                <th colspan="${jumlahPanah}">Anak Panah</th>
+                                <th rowspan="2" style="width: 60px;">Total</th>
+                                <th rowspan="2" style="width: 60px;">End</th>
+                            </tr>
+                            <tr>
+                                ${Array.from({length: jumlahPanah}, (_, i) => `<th style="width: 50px;">${i + 1}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${generateTableRows(playerId, jumlahSesi, jumlahPanah)}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="total-summary" id="${playerId}_summary">
+                    <div style="font-size: 14px; margin-bottom: 8px;">Total Keseluruhan</div>
+                    <div class="grand-total" id="${playerId}_grand_total">0 poin</div>
+                    ${typeof peserta.x_score !== 'undefined' ? `<div class="x-count">X Score: ${peserta.x_score}</div>` : ''}
+                </div>
+            `;
             
-            <?php if(isset($_GET['scoreboard'])) { ?>
-                openScoreBoard("<?= $show_score_board['jumlah_sesi'] ?>", "<?= $show_score_board['jumlah_anak_panah'] ?>");
-            <?php } ?> 
+            playersContainer.appendChild(playerSection);
+        });
+    }
+
+    function generateTableRows(playerId, jumlahSesi, jumlahPanah) {
+        let rowsHtml = '';
+        
+        for (let session = 1; session <= jumlahSesi; session++) {
+            const arrowInputs = Array.from({length: jumlahPanah}, (_, arrow) => `
+                <td>
+                    <input type="text" 
+                           class="arrow-input" 
+                           <?= (isset($_GET['rangking'])) ? 'disabled' : '' ?>
+                           id="${playerId}_a${arrow + 1}_s${session}"
+                           placeholder=""
+                           oninput="validateArrowInput(this);hitungPerArrow('${playerId}', '${arrow + 1}', '${session}','${jumlahPanah}', this)">
+                </td>
+            `).join('');
             
-            function delete_score_board(kegiatan_id, category_id, id) {
-                if(confirm("Apakah anda yakin akan menghapus data ini?")) {
-                    window.location.href = `detail.php?action=scorecard&resource=index&kegiatan_id=${kegiatan_id}&category_id=${category_id}&delete_score_board=${id}`;
-                }
-            }
+            rowsHtml += `
+                <tr class="session-row">
+                    <td class="session-label">S${session}</td>
+                    ${arrowInputs}
+                    <td class="total-cell">
+                        <input type="text" 
+                               class="arrow-input" 
+                               id="${playerId}_total_a${session}"
+                               readonly
+                               style="background: rgba(253, 203, 110, 0.1); border-color: #e17055;">
+                    </td>
+                    <td class="end-cell">
+                        <input type="text" 
+                               class="arrow-input" 
+                               id="${playerId}_end_a${session}"
+                               readonly
+                               style="background: rgba(0, 184, 148, 0.1); border-color: #00b894;">
+                    </td>
+                </tr>
+            `;
+        }
+        
+        return rowsHtml;
+    }
 
-            <?php 
-                if(isset($mysql_data_score)) {
-                    while($jatuh = mysqli_fetch_array($mysql_data_score)) { ?> 
-                        document.getElementById("peserta_<?= $jatuh['peserta_id'] ?>_a<?= $jatuh['arrow'] ?>_s<?= $jatuh['session'] ?>").value = "<?= $jatuh['score'] ?>";
-                        hitungPerArrow('peserta_<?= $jatuh['peserta_id'] ?>', '<?= $jatuh['arrow'] ?>', '<?= $jatuh['session'] ?>','<?= $show_score_board['jumlah_anak_panah'] ?>')
-                    <?php } ?>
-                <?php }
-             ?> 
+    function hitungPerArrow(playerId, arrow, session, totalArrow, el) {
+        let sessionTotal = 0;
+        
+        for(let a = 1; a <= totalArrow; a++) {
+            const input = document.getElementById(`${playerId}_a${a}_s${session}`);
+            if(input && input.value) {
+                let val = input.value.trim().toLowerCase();
+                let score = 0;
+                if (val === "x") {
+                    score = 10;
+                } else if (val === "m") {
+                    score = 0;
+                } else if (!isNaN(val) && val !== "") {
+                    score = parseInt(val);
+                }
+                sessionTotal += score;
+            }
+        }
+        
+        const totalInput = document.getElementById(`${playerId}_total_a${session}`);
+        if(totalInput) {
+            totalInput.value = sessionTotal;
+        }
+        
+        let maxSession = 20;
+        let runningTotal = 0;
+        
+        for(let s = 1; s <= maxSession; s++) {
+            const sessionTotalInput = document.getElementById(`${playerId}_total_a${s}`);
+            const sessionEndInput = document.getElementById(`${playerId}_end_a${s}`);
             
-            function goBack() {
-                window.history.back();
+            if(sessionTotalInput && sessionEndInput) {
+                if(sessionTotalInput.value && sessionTotalInput.value !== '') {
+                    runningTotal += parseInt(sessionTotalInput.value) || 0;
+                }
+                sessionEndInput.value = runningTotal;
+            } else {
+                break;
             }
+        }
+        
+        const grandTotalElement = document.getElementById(`${playerId}_grand_total`);
+        if(grandTotalElement) {
+            grandTotalElement.innerText = runningTotal + " poin";
+        }
+        
+        if(el != null) {
+            let arr_playerID = playerId.split("_");
+            let nama = "Marsha and The Bear";
+            
+            fetch("", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "save_score=1" +
+                    "&nama=" + encodeURIComponent(nama) +
+                    "&peserta_id=" + encodeURIComponent(arr_playerID[1]) +
+                    "&arrow=" + encodeURIComponent(arrow) +
+                    "&session=" + encodeURIComponent(session) + 
+                    "&score=" + encodeURIComponent(document.getElementById(el.id).value)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Score saved: " + data.message);
+            })
+            .catch(err => console.error(err));
+        }
+        return 0;
+    }
 
-            function openScoreBoard(jumlahSesi_data, jumlahPanah_data) {
-                const jumlahSesi = parseInt(jumlahSesi_data);
-                const jumlahPanah = parseInt(jumlahPanah_data);
-                document.getElementById('panahCount').textContent = jumlahSesi * jumlahPanah;
-                generatePlayerSections(jumlahSesi, jumlahPanah);
-                document.getElementById('setupForm').style.display = 'none';
-                document.getElementById('scorecardContainer').style.display = 'block';
-                document.querySelector('.container').style.maxWidth = '1200px';
+    function validateArrowInput(el) {
+        let val = el.value.trim().toLowerCase();
+
+        if (!/^(10|[0-9]|x|m)?$/i.test(val)) {
+            el.value = "";
+            return;
+        }
+        
+        if (val === 'x' || val === 'X') {
+            el.style.background = 'rgba(40, 167, 69, 0.1)';
+            el.style.borderColor = '#28a745';
+            el.style.color = '#28a745';
+            el.style.fontWeight = '700';
+        } else if (val === 'm' || val === 'M') {
+            el.style.background = 'rgba(220, 53, 69, 0.1)';
+            el.style.borderColor = '#dc3545';
+            el.style.color = '#dc3545';
+            el.style.fontWeight = '700';
+        } else if (val === '10') {
+            el.style.background = 'rgba(40, 167, 69, 0.1)';
+            el.style.borderColor = '#28a745';
+            el.style.color = '#28a745';
+            el.style.fontWeight = '700';
+        } else if (val === '9' || val === '8') {
+            el.style.background = 'rgba(255, 193, 7, 0.1)';
+            el.style.borderColor = '#ffc107';
+            el.style.color = '#856404';
+            el.style.fontWeight = '600';
+        } else {
+            el.style.background = 'transparent';
+            el.style.borderColor = 'transparent';
+            el.style.color = '#333';
+            el.style.fontWeight = '600';
+        }
+    }
+
+    function editScorecard() {
+        document.getElementById('setupForm').style.display = 'block';
+        document.getElementById('scorecardContainer').style.display = 'none';
+        document.querySelector('.container').style.maxWidth = '500px'; 
+    }
+
+    // FUNGSI EXPORT EXCEL UNTUK SCORECARD DETAIL
+    function exportScorecardToExcel() {
+        const wb = XLSX.utils.book_new();
+        
+        // Dapatkan info kategori dan kegiatan
+        const categoryName = "<?= htmlspecialchars($kategoriData['name']) ?>";
+        const eventName = "<?= htmlspecialchars($kegiatanData['nama_kegiatan']) ?>";
+        
+        // Dapatkan jumlah sesi dan jumlah panah dari peserta pertama
+        const firstPlayerSection = document.querySelector('.player-section');
+        const firstTable = firstPlayerSection ? firstPlayerSection.querySelector('.score-table') : null;
+        let jumlahSesi = 0;
+        let jumlahPanah = 0;
+        
+        if (firstTable) {
+            // Hitung jumlah sesi dari baris tbody
+            const sessionRows = firstTable.querySelectorAll('tbody tr');
+            jumlahSesi = sessionRows.length;
+            
+            // Hitung jumlah panah dari header baris kedua (th tanpa rowspan/colspan)
+            const secondHeaderRow = firstTable.querySelectorAll('thead tr:nth-child(2) th');
+            jumlahPanah = secondHeaderRow.length;
+            
+            console.log('Jumlah Sesi:', jumlahSesi);
+            console.log('Jumlah Panah:', jumlahPanah);
+        }
+        
+        // Jika masih 0, coba deteksi dari input yang ada
+        if (jumlahPanah === 0 && pesertaData.length > 0) {
+            const firstPlayerId = `peserta_${pesertaData[0].id}`;
+            let arrowCount = 1;
+            while (document.getElementById(`${firstPlayerId}_a${arrowCount}_s1`)) {
+                arrowCount++;
             }
-
-            function generatePlayerSections(jumlahSesi, jumlahPanah) {
-                const playersContainer = document.getElementById('playersContainer');
-                playersContainer.innerHTML = '';
-
-                pesertaData.forEach((peserta, index) => {
-                    const playerId = `peserta_${peserta.id}`;
-                    const playerName = peserta.nama_peserta;
-                    
-                    const playerSection = document.createElement('div');
-                    playerSection.className = 'player-section';
-                    playerSection.innerHTML = `
-                        <div class="player-header">
-                            ${playerName} (${peserta.jenis_kelamin}) ${typeof peserta.total_score !== 'undefined' ? ` - Juara ${index + 1}` : ''}
-                        </div>
-                        <div class="score-table-container">
-                            <table class="score-table">
-                                <thead>
-                                    <tr>
-                                        <th rowspan="2" style="width: 60px;">Sesi</th>
-                                        <th colspan="${jumlahPanah}">Anak Panah</th>
-                                        <th rowspan="2" style="width: 60px;">Total</th>
-                                        <th rowspan="2" style="width: 60px;">End</th>
-                                    </tr>
-                                    <tr>
-                                        ${Array.from({length: jumlahPanah}, (_, i) => `<th style="width: 50px;">${i + 1}</th>`).join('')}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${generateTableRows(playerId, jumlahSesi, jumlahPanah)}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="total-summary" id="${playerId}_summary">
-                            <div style="font-size: 14px; margin-bottom: 8px;">Total Keseluruhan</div>
-                            <div class="grand-total" id="${playerId}_grand_total">0 poin</div>
-                            ${typeof peserta.x_score !== 'undefined' ? `<div class="x-count">X Score: ${peserta.x_score}</div>` : ''}
-                        </div>
-                    `;
-                    
-                    playersContainer.appendChild(playerSection);
-                });
+            jumlahPanah = arrowCount - 1;
+            console.log('Jumlah Panah (dari input):', jumlahPanah);
+        }
+        
+        // ============ SHEET 1: REKAP TOTAL ============
+        const rekapData = [];
+        
+        // Header untuk sheet rekap
+        rekapData.push([categoryName]);
+        rekapData.push([eventName]);
+        rekapData.push([]);
+        
+        const rekapHeaders = ['No', 'Nama'];
+        for (let i = 1; i <= jumlahSesi; i++) {
+            rekapHeaders.push(`Rambahan ${i}`);
+        }
+        rekapHeaders.push('Total');
+        rekapData.push(rekapHeaders);
+        
+        // Isi data rekap
+        pesertaData.forEach((peserta, index) => {
+            const playerId = `peserta_${peserta.id}`;
+            const row = [
+                index + 1,
+                peserta.nama_peserta
+            ];
+            
+            for (let s = 1; s <= jumlahSesi; s++) {
+                const totalInput = document.getElementById(`${playerId}_total_a${s}`);
+                const value = totalInput ? (totalInput.value || '0') : '0';
+                row.push(value);
             }
-
-            function generateTableRows(playerId, jumlahSesi, jumlahPanah) {
-                let rowsHtml = '';
-                
-                for (let session = 1; session <= jumlahSesi; session++) {
-                    const arrowInputs = Array.from({length: jumlahPanah}, (_, arrow) => `
-                        <td>
-                            <input type="text" 
-                                   class="arrow-input" 
-                                   <?= (isset($_GET['rangking'])) ? 'disabled' : '' ?>
-                                   id="${playerId}_a${arrow + 1}_s${session}"
-                                   placeholder=""
-                                   oninput="validateArrowInput(this);hitungPerArrow('${playerId}', '${arrow + 1}', '${session}','${jumlahPanah}', this)">
-                        </td>
-                    `).join('');
-                    
-                    rowsHtml += `
-                        <tr class="session-row">
-                            <td class="session-label">S${session}</td>
-                            ${arrowInputs}
-                            <td class="total-cell">
-                                <input type="text" 
-                                       class="arrow-input" 
-                                       id="${playerId}_total_a${session}"
-                                       readonly
-                                       style="background: rgba(253, 203, 110, 0.1); border-color: #e17055;">
-                            </td>
-                            <td class="end-cell">
-                                <input type="text" 
-                                       class="arrow-input" 
-                                       id="${playerId}_end_a${session}"
-                                       readonly
-                                       style="background: rgba(0, 184, 148, 0.1); border-color: #00b894;">
-                            </td>
-                        </tr>
-                    `;
-                }
-                
-                return rowsHtml;
+            
+            const grandTotalEl = document.getElementById(`${playerId}_grand_total`);
+            const grandTotal = grandTotalEl ? grandTotalEl.textContent.replace(' poin', '') : '0';
+            row.push(grandTotal);
+            
+            rekapData.push(row);
+        });
+        
+        const wsRekap = XLSX.utils.aoa_to_sheet(rekapData);
+        
+        // Set lebar kolom untuk sheet rekap
+        const rekapColWidths = [
+            { wch: 5 },
+            { wch: 20 }
+        ];
+        for (let i = 0; i < jumlahSesi; i++) {
+            rekapColWidths.push({ wch: 12 });
+        }
+        rekapColWidths.push({ wch: 12 });
+        wsRekap['!cols'] = rekapColWidths;
+        
+        // ============ SHEET 2: TRAINING (HORIZONTAL LAYOUT) ============
+        const trainingData = [];
+        
+        // Header utama
+        trainingData.push([categoryName]);
+        trainingData.push([eventName]);
+        trainingData.push([]);
+        
+        pesertaData.forEach((peserta, pesertaIndex) => {
+            const playerId = `peserta_${peserta.id}`;
+            
+            // Spacing antar peserta
+            if (pesertaIndex > 0) {
+                trainingData.push([]);
             }
-
-            function hitungPerArrow(playerId, arrow, session, totalArrow, el) {
-                let sessionTotal = 0;
-                
-                for(let a = 1; a <= totalArrow; a++) {
-                    const input = document.getElementById(`${playerId}_a${a}_s${session}`);
-                    if(input && input.value) {
-                        let val = input.value.trim().toLowerCase();
-                        let score = 0;
-                        if (val === "x") {
-                            score = 10;
-                        } else if (val === "m") {
-                            score = 0;
-                        } else if (!isNaN(val) && val !== "") {
-                            score = parseInt(val);
-                        }
-                        sessionTotal += score;
-                    }
-                }
-                
-                const totalInput = document.getElementById(`${playerId}_total_a${session}`);
-                if(totalInput) {
-                    totalInput.value = sessionTotal;
-                }
-                
-                let maxSession = 20;
-                let runningTotal = 0;
-                
-                for(let s = 1; s <= maxSession; s++) {
-                    const sessionTotalInput = document.getElementById(`${playerId}_total_a${s}`);
-                    const sessionEndInput = document.getElementById(`${playerId}_end_a${s}`);
-                    
-                    if(sessionTotalInput && sessionEndInput) {
-                        if(sessionTotalInput.value && sessionTotalInput.value !== '') {
-                            runningTotal += parseInt(sessionTotalInput.value) || 0;
-                        }
-                        sessionEndInput.value = runningTotal;
-                    } else {
-                        break;
-                    }
-                }
-                
-                const grandTotalElement = document.getElementById(`${playerId}_grand_total`);
-                if(grandTotalElement) {
-                    grandTotalElement.innerText = runningTotal + " poin";
-                }
-                
-                if(el != null) {
-                    let arr_playerID = playerId.split("_");
-                    let nama = "Marsha and The Bear";
-                    
-                    fetch("", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded"
-                        },
-                        body: "save_score=1" +
-                            "&nama=" + encodeURIComponent(nama) +
-                            "&peserta_id=" + encodeURIComponent(arr_playerID[1]) +
-                            "&arrow=" + encodeURIComponent(arrow) +
-                            "&session=" + encodeURIComponent(session) + 
-                            "&score=" + encodeURIComponent(document.getElementById(el.id).value)
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Score saved: " + data.message);
-                    })
-                    .catch(err => console.error(err));
-                }
-                return 0;
+            
+            // Header peserta
+            trainingData.push([`Rank#${pesertaIndex + 1} ${peserta.nama_peserta}`]);
+            
+            // Header kolom: Rambahan | Shot 1 | Shot 2 | ... | Total | End
+            const headerRow = ['Rambahan'];
+            for (let a = 1; a <= jumlahPanah; a++) {
+                headerRow.push(`Shot ${a}`);
             }
-
-            function validateArrowInput(el) {
-                let val = el.value.trim().toLowerCase();
-
-                if (!/^(10|[0-9]|x|m)?$/i.test(val)) {
-                    el.value = "";
-                    return;
+            headerRow.push('Total');
+            headerRow.push('End');
+            trainingData.push(headerRow);
+            
+            // Data setiap rambahan (per baris)
+            for (let s = 1; s <= jumlahSesi; s++) {
+                const row = [s]; // Nomor rambahan
+                
+                // Isi nilai setiap shot
+                for (let a = 1; a <= jumlahPanah; a++) {
+                    const input = document.getElementById(`${playerId}_a${a}_s${s}`);
+                    const value = input ? (input.value || '') : '';
+                    row.push(value);
                 }
                 
-                if (val === 'x' || val === 'X') {
-                    el.style.background = 'rgba(40, 167, 69, 0.1)';
-                    el.style.borderColor = '#28a745';
-                    el.style.color = '#28a745';
-                    el.style.fontWeight = '700';
-                } else if (val === 'm' || val === 'M') {
-                    el.style.background = 'rgba(220, 53, 69, 0.1)';
-                    el.style.borderColor = '#dc3545';
-                    el.style.color = '#dc3545';
-                    el.style.fontWeight = '700';
-                } else if (val === '10') {
-                    el.style.background = 'rgba(40, 167, 69, 0.1)';
-                    el.style.borderColor = '#28a745';
-                    el.style.color = '#28a745';
-                    el.style.fontWeight = '700';
-                } else if (val === '9' || val === '8') {
-                    el.style.background = 'rgba(255, 193, 7, 0.1)';
-                    el.style.borderColor = '#ffc107';
-                    el.style.color = '#856404';
-                    el.style.fontWeight = '600';
-                } else {
-                    el.style.background = 'transparent';
-                    el.style.borderColor = 'transparent';
-                    el.style.color = '#333';
-                    el.style.fontWeight = '600';
-                }
+                // Total rambahan ini
+                const totalInput = document.getElementById(`${playerId}_total_a${s}`);
+                const totalValue = totalInput ? (totalInput.value || '0') : '0';
+                row.push(totalValue);
+                
+                // End (akumulasi sampai rambahan ini)
+                const endInput = document.getElementById(`${playerId}_end_a${s}`);
+                const endValue = endInput ? (endInput.value || '0') : '0';
+                row.push(endValue);
+                
+                trainingData.push(row);
             }
-
-            function editScorecard() {
-                document.getElementById('setupForm').style.display = 'block';
-                document.getElementById('scorecardContainer').style.display = 'none';
-                document.querySelector('.container').style.maxWidth = '500px'; 
-            }
-
-            // FUNGSI EXPORT EXCEL UNTUK TABEL DAFTAR SCORECARD
-            // FUNGSI EXPORT EXCEL UNTUK SCORECARD DETAIL
-// FUNGSI EXPORT EXCEL UNTUK SCORECARD DETAIL
-            function exportScorecardToExcel() {
-                const wb = XLSX.utils.book_new();
-                
-                // Dapatkan info kategori dan kegiatan
-                const categoryName = "<?= htmlspecialchars($kategoriData['name']) ?>";
-                const eventName = "<?= htmlspecialchars($kegiatanData['nama_kegiatan']) ?>";
-                
-                // Dapatkan jumlah sesi dari peserta pertama
-                const firstPlayerSection = document.querySelector('.player-section');
-                const firstTable = firstPlayerSection ? firstPlayerSection.querySelector('.score-table') : null;
-                let jumlahSesi = 0;
-                let jumlahPanah = 0;
-                
-                if (firstTable) {
-                    const sessionRows = firstTable.querySelectorAll('tbody tr');
-                    jumlahSesi = sessionRows.length;
-                    
-                    const headerCols = firstTable.querySelectorAll('thead tr:first-child th');
-                    let totalCols = 0;
-                    headerCols.forEach(th => {
-                        const colspan = th.getAttribute('colspan');
-                        if (colspan) {
-                            totalCols += parseInt(colspan);
-                        } else if (!th.hasAttribute('rowspan')) {
-                            totalCols += 1;
-                        }
-                    });
-                    jumlahPanah = totalCols - 3;
-                }
-                
-                // ============ SHEET 1: REKAP TOTAL ============
-                const rekapData = [];
-                
-                // Header untuk sheet rekap
-                rekapData.push([categoryName]);
-                rekapData.push([eventName]);
-                rekapData.push([]);
-                
-                const rekapHeaders = ['No', 'Nama'];
-                for (let i = 1; i <= jumlahSesi; i++) {
-                    rekapHeaders.push(`Rambahan ${i}`);
-                }
-                rekapHeaders.push('Total');
-                rekapData.push(rekapHeaders);
-                
-                // Isi data rekap
-                pesertaData.forEach((peserta, index) => {
-                    const playerId = `peserta_${peserta.id}`;
-                    const row = [
-                        index + 1,
-                        peserta.nama_peserta
-                    ];
-                    
-                    for (let s = 1; s <= jumlahSesi; s++) {
-                        const totalInput = document.getElementById(`${playerId}_total_a${s}`);
-                        const value = totalInput ? (totalInput.value || '0') : '0';
-                        row.push(value);
-                    }
-                    
-                    const grandTotalEl = document.getElementById(`${playerId}_grand_total`);
-                    const grandTotal = grandTotalEl ? grandTotalEl.textContent.replace(' poin', '') : '0';
-                    row.push(grandTotal);
-                    
-                    rekapData.push(row);
-                });
-                
-                const wsRekap = XLSX.utils.aoa_to_sheet(rekapData);
-                
-                // Set lebar kolom untuk sheet rekap
-                const rekapColWidths = [
-                    { wch: 5 },
-                    { wch: 20 }
-                ];
-                for (let i = 0; i < jumlahSesi; i++) {
-                    rekapColWidths.push({ wch: 12 });
-                }
-                rekapColWidths.push({ wch: 12 });
-                wsRekap['!cols'] = rekapColWidths;
-                
-                // ============ SHEET 2: TRAINING (DETAIL PER PESERTA) ============
-                const trainingData = [];
-                
-                pesertaData.forEach((peserta, pesertaIndex) => {
-                    const playerId = `peserta_${peserta.id}`;
-                    
-                    // Header peserta
-                    if (pesertaIndex > 0) {
-                        trainingData.push([]);
-                        trainingData.push([]);
-                    }
-                    
-                    const rankText = typeof peserta.total_score !== 'undefined' ? ` - Juara ${pesertaIndex + 1}` : '';
-                    trainingData.push([`Rank#${pesertaIndex + 1} ${peserta.nama_peserta}${rankText}`]);
-                    
-                    // Header tabel
-                    const detailHeaders = ['Rambahan'];
-                    for (let a = 1; a <= jumlahPanah; a++) {
-                        detailHeaders.push(`Shot ${a}`);
-                    }
-                    detailHeaders.push('Total');
-                    detailHeaders.push('End');
-                    trainingData.push(detailHeaders);
-                    
-                    // Data per sesi
-                    for (let s = 1; s <= jumlahSesi; s++) {
-                        const row = [s];
-                        
-                        // Ambil nilai setiap shot
-                        for (let a = 1; a <= jumlahPanah; a++) {
-                            const input = document.getElementById(`${playerId}_a${a}_s${s}`);
-                            const value = input ? (input.value || '') : '';
-                            row.push(value);
-                        }
-                        
-                        // Total sesi
-                        const totalInput = document.getElementById(`${playerId}_total_a${s}`);
-                        const totalValue = totalInput ? (totalInput.value || '0') : '0';
-                        row.push(totalValue);
-                        
-                        // End (akumulasi)
-                        const endInput = document.getElementById(`${playerId}_end_a${s}`);
-                        const endValue = endInput ? (endInput.value || '0') : '0';
-                        row.push(endValue);
-                        
-                        trainingData.push(row);
-                    }
-                });
-                
-                const wsTraining = XLSX.utils.aoa_to_sheet(trainingData);
-                
-                // Set lebar kolom untuk sheet training
-                const trainingColWidths = [
-                    { wch: 12 }
-                ];
-                for (let i = 0; i < jumlahPanah; i++) {
-                    trainingColWidths.push({ wch: 8 });
-                }
-                trainingColWidths.push({ wch: 10 });
-                trainingColWidths.push({ wch: 10 });
-                wsTraining['!cols'] = trainingColWidths;
-                
-                // Tambahkan kedua sheet ke workbook
-                XLSX.utils.book_append_sheet(wb, wsTraining, "Training");
-                XLSX.utils.book_append_sheet(wb, wsRekap, "Rekap Total");
-                
-                const fileName = `Scorecard_${categoryName}_${new Date().toISOString().split('T')[0]}.xlsx`;
-                XLSX.writeFile(wb, fileName);
-            }
-        </script>
+        });
+        
+        const wsTraining = XLSX.utils.aoa_to_sheet(trainingData);
+        
+        // Set lebar kolom untuk sheet training
+        const trainingColWidths = [
+            { wch: 12 } // Kolom Rambahan
+        ];
+        for (let i = 0; i < jumlahPanah; i++) {
+            trainingColWidths.push({ wch: 8 }); // Kolom Shot
+        }
+        trainingColWidths.push({ wch: 10 }); // Total
+        trainingColWidths.push({ wch: 10 }); // End
+        wsTraining['!cols'] = trainingColWidths;
+        
+        // Tambahkan sheet dengan urutan yang benar
+        XLSX.utils.book_append_sheet(wb, wsRekap, "Rekap Total");
+        XLSX.utils.book_append_sheet(wb, wsTraining, "Training");
+        
+        const fileName = `Scorecard_${categoryName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+    }
+</script>
     </body>
     </html>
     <?php

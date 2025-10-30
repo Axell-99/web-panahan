@@ -690,9 +690,14 @@ while ($row = $result->fetch_assoc()) {
 </head>
 <body>
     <div class="container">
-        <div class="page-header">
-            <a href="dashboard.php" class="back-link">← Kembali ke Dashboard</a>
-            <h1>Data Kegiatan</h1>
+         <div class="page-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <a href="dashboard.php" class="back-link">← Kembali ke Dashboard</a>
+                    <h1>Data Kegiatan</h1>
+                </div>
+                <a href="logout.php" class="btn btn-danger" style="text-decoration: none;">Logout</a>
+            </div>
         </div>
     
         <div class="controls-section">
