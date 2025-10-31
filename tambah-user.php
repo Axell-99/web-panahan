@@ -282,9 +282,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <hr class="my-4">
 
                             <div class="d-flex gap-3 justify-content-end">
-                                <button type="reset" class="btn btn-secondary">
-                                    <i class="fas fa-undo me-2"></i>Reset Form
-                                </button>
+                                
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-save me-2"></i>Simpan User
                                 </button>
