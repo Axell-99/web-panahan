@@ -294,7 +294,6 @@ $role = $_SESSION['role'] ?? 'user';
                 <div class="dropdown-content">
                     <a href="users.php">👥 Users</a>
                     <a href="categori.view.php">📋 Kategori</a>
-                    <a href="pertandingan.view.php">🏆 Pertandingan</a>
                 </div>
             </div>
 
