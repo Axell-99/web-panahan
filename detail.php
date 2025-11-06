@@ -1797,16 +1797,18 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
     
     // BAGIAN SCORECARD SETUP
     ?>
-    <!DOCTYPE html>
-    <html lang="id">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Setup Scorecard Panahan - <?= htmlspecialchars($kategoriData['name']) ?></title>
-        <!-- Tambahan CDN untuk Export Excel -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-        <style>
-        * {
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Scorecard Panahan - <?= htmlspecialchars($kategoriData['name']) ?></title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -1974,6 +1976,158 @@ body {
     background: rgba(255, 193, 7, 0.1);
     border: 1px solid rgba(255, 193, 7, 0.3);
     color: #ffc107;
+}
+
+/* Dropdown Styles - Integrated Version */
+.peserta-selector-inline {
+    background: rgba(116, 185, 255, 0.05);
+    border: 2px dashed rgba(116, 185, 255, 0.3);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.peserta-selector-inline .selector-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.peserta-selector-inline .selector-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #74b9ff;
+    margin-bottom: 8px;
+}
+
+.peserta-selector-inline .selector-subtitle {
+    font-size: 13px;
+    color: #ddd;
+    opacity: 0.9;
+}
+
+.dropdown-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.dropdown-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.dropdown-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.dropdown-arrow {
+    transition: transform 0.3s ease;
+    font-size: 12px;
+}
+
+.dropdown-btn.active .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    right: 0;
+    background: rgba(45, 52, 54, 0.98);
+    border: 2px solid rgba(116, 185, 255, 0.3);
+    border-radius: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.dropdown-item {
+    padding: 15px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(116, 185, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background: rgba(116, 185, 255, 0.15);
+}
+
+.dropdown-item-icon {
+    font-size: 24px;
+    width: 30px;
+    text-align: center;
+}
+
+.dropdown-item-info {
+    flex: 1;
+}
+
+.dropdown-item-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 3px;
+}
+
+.dropdown-item-gender {
+    font-size: 12px;
+    color: #ddd;
+    opacity: 0.8;
+}
+
+.selected-peserta-info {
+    background: rgba(253, 203, 110, 0.1);
+    border: 1px solid rgba(253, 203, 110, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.selected-peserta-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fdcb6e;
+}
+
+.change-peserta-btn {
+    background: rgba(116, 185, 255, 0.2);
+    border: 1px solid rgba(116, 185, 255, 0.5);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.change-peserta-btn:hover {
+    background: rgba(116, 185, 255, 0.3);
+    transform: translateY(-2px);
 }
 
 .scorecard-container {
@@ -2438,7 +2592,6 @@ h3 {
 .styled-table tbody tr:nth-child(4) { animation-delay: 0.2s; }
 .styled-table tbody tr:nth-child(5) { animation-delay: 0.25s; }
 
-/* TAMBAHAN CSS UNTUK TOMBOL EXPORT */
 .export-btn {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     border: none;
@@ -2465,11 +2618,11 @@ h3 {
     flex-wrap: wrap;
 }
 
-/* ============================================
-   RESPONSIVE BREAKPOINTS
-   ============================================ */
+.hidden {
+    display: none !important;
+}
 
-/* Tablet - 1024px and below */
+/* RESPONSIVE */
 @media (max-width: 1024px) {
     .container {
         max-width: 100%;
@@ -2486,7 +2639,6 @@ h3 {
     }
 }
 
-/* Tablet - 768px and below */
 @media (max-width: 768px) {
     body {
         padding: 10px;
@@ -2497,9 +2649,39 @@ h3 {
     }
 
     .setup-form,
-    .scorecard-container {
+    .scorecard-container,
+    .peserta-selector-inline {
         padding: 12px;
         border-radius: 12px;
+    }
+
+    .peserta-selector-inline {
+        padding: 15px;
+    }
+
+    .peserta-selector-inline .selector-title {
+        font-size: 16px;
+    }
+
+    .peserta-selector-inline .selector-subtitle {
+        font-size: 12px;
+    }
+
+    .dropdown-container {
+        max-width: 100%;
+    }
+
+    .dropdown-btn {
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+
+    .dropdown-item {
+        padding: 12px 15px;
+    }
+
+    .dropdown-item-name {
+        font-size: 14px;
     }
 
     .logo {
@@ -2638,16 +2820,20 @@ h3 {
     }
 }
 
-/* Mobile - 640px and below */
 @media (max-width: 640px) {
     body {
         padding: 8px;
     }
 
     .setup-form,
-    .scorecard-container {
+    .scorecard-container,
+    .peserta-selector-inline {
         padding: 10px;
         border-radius: 10px;
+    }
+
+    .peserta-selector-inline {
+        padding: 12px;
     }
 
     .logo {
@@ -2784,7 +2970,6 @@ h3 {
     }
 }
 
-/* Mobile - 480px and below */
 @media (max-width: 480px) {
     body {
         padding: 6px;
@@ -2797,9 +2982,22 @@ h3 {
     }
 
     .setup-form,
-    .scorecard-container {
+    .scorecard-container,
+    .peserta-selector-inline {
         padding: 8px;
         border-radius: 8px;
+    }
+
+    .peserta-selector-inline {
+        padding: 10px;
+    }
+
+    .peserta-selector-inline .selector-title {
+        font-size: 14px;
+    }
+
+    .peserta-selector-inline .selector-subtitle {
+        font-size: 11px;
     }
 
     .header {
@@ -2994,15 +3192,19 @@ h3 {
     }
 }
 
-/* Very small mobile - 360px and below */
 @media (max-width: 360px) {
     body {
         padding: 5px;
     }
 
     .setup-form,
-    .scorecard-container {
+    .scorecard-container,
+    .peserta-selector-inline {
         padding: 6px;
+    }
+
+    .peserta-selector-inline {
+        padding: 8px;
     }
 
     .logo {
@@ -3132,7 +3334,6 @@ h3 {
     }
 }
 
-/* Print styles */
 @media print {
     body {
         background: white;
@@ -3142,7 +3343,10 @@ h3 {
     .back-btn,
     .edit-btn,
     .add-link,
-    .export-btn {
+    .export-btn,
+    .change-peserta-btn,
+    .peserta-selector-inline,
+    .selected-peserta-info {
         display: none;
     }
 
@@ -3173,559 +3377,868 @@ h3 {
     }
 }
 </style>
-        
-    </head>
-    <body>
-         <div class="container">
-            <?php if(isset($_GET['resource'])) { ?>
-                <?php if($_GET['resource'] == 'form') { ?>
-                    <a  class="back-btn" href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>">←</a>
-                    <form action="" method="post">
-                        <div class="setup-form" id="setupForm">
-                            <input type="hidden" id="local_time" name="local_time">
-                            <div class="header">
-                                <div class="logo">🏹</div>
-                                <div class="title">Setup Scorecard</div>
-                                <div class="subtitle">Atur jumlah sesi dan anak panah</div>
-                            </div>
-
-                            <div class="category-info">
-                                <div class="category-name"><?= htmlspecialchars($kategoriData['name']) ?></div>
-                                <div class="event-name"><?= htmlspecialchars($kegiatanData['nama_kegiatan']) ?></div>
-                                <div class="peserta-count"><?= count($pesertaList) ?> Peserta Terdaftar</div>
-                            </div>
-
-                            <?php if (count($pesertaList) == 0): ?>
-                                <div class="alert alert-warning">
-                                    <strong>Peringatan:</strong> Tidak ada peserta yang terdaftar dalam kategori ini.
-                                </div>
-                            <?php endif; ?>
-
-                            <div class="form-group">
-                                <label class="form-label">Jumlah Sesi</label>
-                                <input type="number" class="form-input" name="jumlahSesi" id="jumlahSesi" min="1" value="9" placeholder="9">
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Jumlah Anak Panah per Sesi</label>
-                                <input type="number" class="form-input" name="jumlahPanah" id="jumlahPanah" min="1"  value="3" placeholder="3">
-                            </div>
-
-                            <button type="submit" name="create" class="create-btn" <?= count($pesertaList) == 0 ? 'disabled' : '' ?>>
-                                Buat Scorecard
-                            </button>
-                        </div>
-                    </form>
-                <?php } ?>
-                <?php if($_GET['resource'] == 'index') { ?>
+</head>
+<body>
+    <div class="container">
+        <?php if(isset($_GET['resource'])) { ?>
+            <?php if($_GET['resource'] == 'form') { ?>
+                <a class="back-btn" href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>">←</a>
+                <form action="" method="post">
                     <div class="setup-form" id="setupForm">
-                        <div class="header-bar">
-                            <button class="back-btn" onclick="goBack()">←</button>
-                            <div class="header-actions">
-                                <a href="detail.php?action=scorecard&resource=form&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>" class="add-link">Tambah data +</a>
-                                <button onclick="exportTableToExcel()" class="export-btn">📊 Export Excel</button>
+                        <input type="hidden" id="local_time" name="local_time">
+                        <div class="header">
+                            <div class="logo">🏹</div>
+                            <div class="title">Setup Scorecard</div>
+                            <div class="subtitle">Atur jumlah sesi dan anak panah</div>
+                        </div>
+
+                        <div class="category-info">
+                            <div class="category-name"><?= htmlspecialchars($kategoriData['name']) ?></div>
+                            <div class="event-name"><?= htmlspecialchars($kegiatanData['nama_kegiatan']) ?></div>
+                            <div class="peserta-count"><?= count($pesertaList) ?> Peserta Terdaftar</div>
+                        </div>
+
+                        <?php if (count($pesertaList) == 0): ?>
+                            <div class="alert alert-warning">
+                                <strong>Peringatan:</strong> Tidak ada peserta yang terdaftar dalam kategori ini.
                             </div>
+                        <?php endif; ?>
+
+                        <div class="form-group">
+                            <label class="form-label">Jumlah Sesi</label>
+                            <input type="number" class="form-input" name="jumlahSesi" id="jumlahSesi" min="1" value="9" placeholder="9">
                         </div>
-                        <div class="table-wrapper">
-                            <table class="styled-table" id="scorecardTable">
-                                <thead>
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Tanggal</th>
-                                        <th>Jumlah Sesi</th>
-                                        <th>Jumlah Anak Panah</th>
-                                        <th>Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php 
-                                        $loopNumber = 1;
-                                        while($a = mysqli_fetch_array($mysql_table_score_board)) { ?>
-                                            <tr>
-                                                <td><?= $loopNumber++ ?></td>
-                                                <td><?= $a['created'] ?></td>
-                                                <td><?= $a['jumlah_sesi'] ?></td>
-                                                <td><?= $a['jumlah_anak_panah'] ?></td>
-                                                <td>
-                                                    <a href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>&scoreboard=<?= $a['id'] ?>&rangking=true" class="btn">Ranking</a>
-                                                    <a href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>&scoreboard=<?= $a['id'] ?>" class="btn">Detail</a>
-                                                    <a href="detail.php?aduan=true&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>&scoreboard=<?= $a['id'] ?>" class="btn">Aduan</a>
-                                                    <button onclick="delete_score_board('<?= $kegiatan_id ?>', '<?= $category_id ?>', '<?= $a['id'] ?>')" class="btn">Hapus</button>
-                                                </td>
-                                            </tr>
-                                        <?php }?>
-                                </tbody>
-                            </table>
+
+                        <div class="form-group">
+                            <label class="form-label">Jumlah Anak Panah per Sesi</label>
+                            <input type="number" class="form-input" name="jumlahPanah" id="jumlahPanah" min="1" value="3" placeholder="3">
+                        </div>
+
+                        <button type="submit" name="create" class="create-btn" <?= count($pesertaList) == 0 ? 'disabled' : '' ?>>
+                            Buat Scorecard
+                        </button>
+                    </div>
+                </form>
+            <?php } ?>
+            
+            <?php if($_GET['resource'] == 'index') { ?>
+                <?php if(!isset($_GET['scoreboard'])) { ?>
+                <div class="setup-form" id="setupForm">
+                    <div class="header-bar">
+                        <button class="back-btn" onclick="goBack()">←</button>
+                        <div class="header-actions">
+                            <a href="detail.php?action=scorecard&resource=form&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>" class="add-link">Tambah data +</a>
+                            <button onclick="exportTableToExcel()" class="export-btn">📊 Export Excel</button>
                         </div>
                     </div>
+                    <div class="table-wrapper">
+                        <table class="styled-table" id="scorecardTable">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Tanggal</th>
+                                    <th>Jumlah Sesi</th>
+                                    <th>Jumlah Anak Panah</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php 
+                                    $loopNumber = 1;
+                                    while($a = mysqli_fetch_array($mysql_table_score_board)) { ?>
+                                        <tr>
+                                            <td><?= $loopNumber++ ?></td>
+                                            <td><?= $a['created'] ?></td>
+                                            <td><?= $a['jumlah_sesi'] ?></td>
+                                            <td><?= $a['jumlah_anak_panah'] ?></td>
+                                            <td>
+                                                <a href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>&scoreboard=<?= $a['id'] ?>&rangking=true" class="btn">Ranking</a>
+                                                <a href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>&scoreboard=<?= $a['id'] ?>" class="btn">Detail</a>
+                                                <a href="detail.php?aduan=true&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>&scoreboard=<?= $a['id'] ?>" class="btn">Aduan</a>
+                                                <button onclick="delete_score_board('<?= $kegiatan_id ?>', '<?= $category_id ?>', '<?= $a['id'] ?>')" class="btn">Hapus</button>
+                                            </td>
+                                        </tr>
+                                    <?php }?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 <?php } ?>
-            <?php }?>
+            <?php } ?>
+        <?php }?>
 
-            <div class="scorecard-container" id="scorecardContainer">
-                <div class="header-flex">
-                    <a  class="back-btn" href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>">←</a>
-                    <h3>Score Board <?= (isset($_GET['rangking'])) ? '(Ranking)' : '' ?></h3>
-                    <button onclick="exportScorecardToExcel()" class="export-btn">📊 Export</button>
-                </div>
-                <div class="scorecard-header">
-                    <div class="category-header-info">
-                        <div class="category-icon">🎯</div>
-                        <div>
-                            <div class="category-name" style="font-size: 14px; margin: 0;"><?= htmlspecialchars($kategoriData['name']) ?></div>
-                            <div style="font-size: 12px; color: #ddd;"><?= htmlspecialchars($kegiatanData['nama_kegiatan']) ?></div>
-                        </div>
-                    </div>
-                    <div class="category-header-info">
-                        <div class="category-icon">👥</div>
-                        <div>
-                            <div class="category-name" style="font-size: 14px; margin: 0;" id="pesertaCount"><?= count($pesertaList) ?></div>
-                            <div style="font-size: 12px; color: #ddd;">Peserta</div>
-                        </div>
-                    </div>
-                    <div class="category-header-info">
-                        <div class="category-icon">🏹</div>
-                        <div>
-                            <div class="category-name" style="font-size: 14px; margin: 0;" id="panahCount">-</div>
-                            <div style="font-size: 12px; color: #ddd;">Anak Panah</div>
-                        </div>
+        <!-- Selector Peserta dengan Dropdown (Diintegrasikan ke dalam scorecard) -->
+        <?php if(isset($_GET['scoreboard']) && !isset($_GET['rangking'])) { ?>
+        <div class="scorecard-container" id="scorecardContainer" style="display: block;">
+            <div class="header-flex">
+                <a class="back-btn" href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>">←</a>
+                <h3>Score Board</h3>
+                <button onclick="exportScorecardToExcel()" class="export-btn" id="exportBtn" style="visibility: hidden;">📊 Export</button>
+            </div>
+            
+            <div class="scorecard-header">
+                <div class="category-header-info">
+                    <div class="category-icon">🎯</div>
+                    <div>
+                        <div class="category-name" style="font-size: 14px; margin: 0;"><?= htmlspecialchars($kategoriData['name']) ?></div>
+                        <div style="font-size: 12px; color: #ddd;"><?= htmlspecialchars($kegiatanData['nama_kegiatan']) ?></div>
                     </div>
                 </div>
+                <div class="category-header-info">
+                    <div class="category-icon">👥</div>
+                    <div>
+                        <div class="category-name" style="font-size: 14px; margin: 0;" id="pesertaCount"><?= count($pesertaList) ?></div>
+                        <div style="font-size: 12px; color: #ddd;">Peserta</div>
+                    </div>
+                </div>
+                <div class="category-header-info">
+                    <div class="category-icon">🏹</div>
+                    <div>
+                        <div class="category-name" style="font-size: 14px; margin: 0;" id="panahCount">-</div>
+                        <div style="font-size: 12px; color: #ddd;">Anak Panah</div>
+                    </div>
+                </div>
+            </div>
 
-                <div class="scorecard-title">Informasi Skor</div>
+            <!-- Dropdown Pilih Peserta -->
+            <div class="peserta-selector-inline" id="pesertaSelectorInline">
+                <div class="selector-header">
+                    <div class="selector-title">🏹 Pilih Peserta untuk Input Score</div>
+                    <div class="selector-subtitle">Pilih peserta dari dropdown untuk mulai mengisi score</div>
+                </div>
 
-                <div id="playersContainer"></div>
+                <div class="dropdown-container">
+                    <button class="dropdown-btn" id="dropdownBtn" onclick="toggleDropdown()">
+                        <span id="dropdownText">Pilih Peserta</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu hidden" id="dropdownMenu">
+                        <!-- Akan diisi dengan JavaScript -->
+                    </div>
+                </div>
+            </div>
 
-                <button class="edit-btn" onclick="editScorecard()">
-                    Edit Setup
+            <!-- Info Peserta yang Sedang Diisi -->
+            <div class="selected-peserta-info hidden" id="selectedPesertaInfo">
+                <div style="font-size: 14px; margin-bottom: 5px;">Sedang mengisi score untuk:</div>
+                <div class="selected-peserta-name" id="selectedPesertaName"></div>
+                <button class="change-peserta-btn" onclick="changePeserta()">
+                    🔄 Ganti Peserta
                 </button>
             </div>
+
+            <div class="scorecard-title" id="scorecardTitle" style="display: none;">Informasi Skor</div>
+
+            <div id="playersContainer"></div>
         </div>
+        <?php } ?>
 
-        <script>
-    <?php if($_GET['resource'] == 'form') { ?>
-        let now = new Date();
-        let formatted = now.getFullYear() + "-" 
-            + String(now.getMonth()+1).padStart(2, '0') + "-"
-            + String(now.getDate()).padStart(2, '0') + " "
-            + String(now.getHours()).padStart(2, '0') + ":"
-            + String(now.getMinutes()).padStart(2, '0') + ":"
-            + String(now.getSeconds()).padStart(2, '0');
+        <!-- Mode Ranking (Tampil Semua Peserta) -->
+        <?php if(isset($_GET['scoreboard']) && isset($_GET['rangking'])) { ?>
+        <div class="scorecard-container" id="scorecardContainer" style="display: block;">
+            <div class="header-flex">
+                <a class="back-btn" href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>">←</a>
+                <h3>Score Board (Ranking)</h3>
+                <button onclick="exportScorecardToExcel()" class="export-btn">📊 Export</button>
+            </div>
+            <div class="scorecard-header">
+                <div class="category-header-info">
+                    <div class="category-icon">🎯</div>
+                    <div>
+                        <div class="category-name" style="font-size: 14px; margin: 0;"><?= htmlspecialchars($kategoriData['name']) ?></div>
+                        <div style="font-size: 12px; color: #ddd;"><?= htmlspecialchars($kegiatanData['nama_kegiatan']) ?></div>
+                    </div>
+                </div>
+                <div class="category-header-info">
+                    <div class="category-icon">👥</div>
+                    <div>
+                        <div class="category-name" style="font-size: 14px; margin: 0;" id="pesertaCount"><?= count($pesertaList) ?></div>
+                        <div style="font-size: 12px; color: #ddd;">Peserta</div>
+                    </div>
+                </div>
+                <div class="category-header-info">
+                    <div class="category-icon">🏹</div>
+                    <div>
+                        <div class="category-name" style="font-size: 14px; margin: 0;" id="panahCount">-</div>
+                        <div style="font-size: 12px; color: #ddd;">Anak Panah</div>
+                    </div>
+                </div>
+            </div>
 
-        document.getElementById("local_time").value = formatted;
-    <?php } ?>
-    
-    const pesertaData = <?= json_encode($pesertaList) ?>;
-    <?php if(isset($_GET['rangking'])) { ?>
-        const peserta_score = <?= json_encode($peserta_score) ?>;
-        function tambahAtributById(id, key, value) {
-            const peserta = pesertaData.find(p => p.id === id);
-            if (peserta) {
-                peserta[key] = value;
-            }
-        }
+            <div class="scorecard-title">Informasi Skor</div>
 
-        for(let i = 0; i < peserta_score.length; i++) {
-            tambahAtributById(peserta_score[i]['id'], "total_score", peserta_score[i]['total_score']);
-            tambahAtributById(peserta_score[i]['id'], "x_score", peserta_score[i]['total_x']);
-        }
+            <div id="playersContainer"></div>
 
-        pesertaData.sort((a, b) => {
-            if (b.total_score !== a.total_score) {
-                return b.total_score - a.total_score;
-            }
-            return b.x_score - a.x_score;
-        });
-    <?php } ?>
-    
-    <?php if(isset($_GET['scoreboard'])) { ?>
-        openScoreBoard("<?= $show_score_board['jumlah_sesi'] ?>", "<?= $show_score_board['jumlah_anak_panah'] ?>");
-    <?php } ?> 
-    
-    function delete_score_board(kegiatan_id, category_id, id) {
-        if(confirm("Apakah anda yakin akan menghapus data ini?")) {
-            window.location.href = `detail.php?action=scorecard&resource=index&kegiatan_id=${kegiatan_id}&category_id=${category_id}&delete_score_board=${id}`;
+            <button class="edit-btn" onclick="editScorecard()">
+                Edit Setup
+            </button>
+        </div>
+        <?php } ?>
+    </div>
+
+    <script>
+<?php if($_GET['resource'] == 'form') { ?>
+    let now = new Date();
+    let formatted = now.getFullYear() + "-" 
+        + String(now.getMonth()+1).padStart(2, '0') + "-"
+        + String(now.getDate()).padStart(2, '0') + " "
+        + String(now.getHours()).padStart(2, '0') + ":"
+        + String(now.getMinutes()).padStart(2, '0') + ":"
+        + String(now.getSeconds()).padStart(2, '0');
+
+    document.getElementById("local_time").value = formatted;
+<?php } ?>
+
+const pesertaData = <?= json_encode($pesertaList) ?>;
+let selectedPesertaId = null;
+
+<?php if(isset($_GET['rangking'])) { ?>
+    const peserta_score = <?= json_encode($peserta_score) ?>;
+    function tambahAtributById(id, key, value) {
+        const peserta = pesertaData.find(p => p.id === id);
+        if (peserta) {
+            peserta[key] = value;
         }
     }
 
+    for(let i = 0; i < peserta_score.length; i++) {
+        tambahAtributById(peserta_score[i]['id'], "total_score", peserta_score[i]['total_score']);
+        tambahAtributById(peserta_score[i]['id'], "x_score", peserta_score[i]['total_x']);
+    }
+
+    pesertaData.sort((a, b) => {
+        if (b.total_score !== a.total_score) {
+            return b.total_score - a.total_score;
+        }
+        return b.x_score - a.x_score;
+    });
+<?php } ?> 
+
+<?php if(isset($_GET['scoreboard'])) { ?>
+    <?php if(isset($_GET['rangking'])) { ?>
+        openScoreBoard("<?= $show_score_board['jumlah_sesi'] ?>", "<?= $show_score_board['jumlah_anak_panah'] ?>");
+    <?php } else { ?>
+        // Initialize dropdown untuk mode input
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+        });
+    <?php } ?>
+<?php } ?> 
+
+function delete_score_board(kegiatan_id, category_id, id) {
+    if(confirm("Apakah anda yakin akan menghapus data ini?")) {
+        window.location.href = `detail.php?action=scorecard&resource=index&kegiatan_id=${kegiatan_id}&category_id=${category_id}&delete_score_board=${id}`;
+    }
+}
+
+<?php 
+    if(isset($mysql_data_score)) {
+        while($jatuh = mysqli_fetch_array($mysql_data_score)) { ?> 
+            if(document.getElementById("peserta_<?= $jatuh['peserta_id'] ?>_a<?= $jatuh['arrow'] ?>_s<?= $jatuh['session'] ?>")) {
+                document.getElementById("peserta_<?= $jatuh['peserta_id'] ?>_a<?= $jatuh['arrow'] ?>_s<?= $jatuh['session'] ?>").value = "<?= $jatuh['score'] ?>";
+                hitungPerArrow('peserta_<?= $jatuh['peserta_id'] ?>', '<?= $jatuh['arrow'] ?>', '<?= $jatuh['session'] ?>','<?= $show_score_board['jumlah_anak_panah'] ?>');
+            }
+        <?php } ?>
+    <?php }
+?> 
+
+// Initialize
+function init() {
+    renderDropdownMenu();
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('dropdownMenu');
+        const dropdownBtn = document.getElementById('dropdownBtn');
+        
+        if (dropdown && dropdownBtn && !dropdownBtn.contains(event.target) && !dropdown.contains(event.target)) {
+            dropdown.classList.add('hidden');
+            dropdownBtn.classList.remove('active');
+        }
+    });
+}
+
+function renderDropdownMenu() {
+    const menu = document.getElementById('dropdownMenu');
+    if (!menu) return;
+    
+    menu.innerHTML = '';
+
+    pesertaData.forEach(peserta => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        item.onclick = () => selectPeserta(peserta.id);
+        
+        item.innerHTML = `
+            <div class="dropdown-item-icon">${peserta.jenis_kelamin === 'P' ? '👧' : '👦'}</div>
+            <div class="dropdown-item-info">
+                <div class="dropdown-item-name">${peserta.nama_peserta}</div>
+                <div class="dropdown-item-gender">${peserta.jenis_kelamin === 'P' ? 'Putri' : 'Putra'}</div>
+            </div>
+        `;
+        
+        menu.appendChild(item);
+    });
+}
+
+function toggleDropdown() {
+    const dropdown = document.getElementById('dropdownMenu');
+    const dropdownBtn = document.getElementById('dropdownBtn');
+    
+    if (dropdown && dropdownBtn) {
+        dropdown.classList.toggle('hidden');
+        dropdownBtn.classList.toggle('active');
+    }
+}
+
+function selectPeserta(pesertaId) {
+    selectedPesertaId = pesertaId;
+    const peserta = pesertaData.find(p => p.id === pesertaId);
+    
+    if (peserta) {
+        // Close dropdown
+        const dropdown = document.getElementById('dropdownMenu');
+        const dropdownBtn = document.getElementById('dropdownBtn');
+        if (dropdown) dropdown.classList.add('hidden');
+        if (dropdownBtn) dropdownBtn.classList.remove('active');
+        
+        // Update selected info
+        const selectedName = document.getElementById('selectedPesertaName');
+        const selectedInfo = document.getElementById('selectedPesertaInfo');
+        if (selectedName) selectedName.textContent = peserta.nama_peserta;
+        if (selectedInfo) selectedInfo.classList.remove('hidden');
+        
+        // Hide selector, show scorecard content
+        const selectorInline = document.getElementById('pesertaSelectorInline');
+        const scorecardTitle = document.getElementById('scorecardTitle');
+        const exportBtn = document.getElementById('exportBtn');
+        
+        if (selectorInline) selectorInline.style.display = 'none';
+        if (scorecardTitle) scorecardTitle.style.display = 'block';
+        if (exportBtn) exportBtn.style.visibility = 'visible';
+        
+        // Generate scorecard untuk peserta ini
+        const jumlahSesi = parseInt("<?= $show_score_board['jumlah_sesi'] ?? 9 ?>");
+        const jumlahPanah = parseInt("<?= $show_score_board['jumlah_anak_panah'] ?? 3 ?>");
+        document.getElementById('panahCount').textContent = jumlahSesi * jumlahPanah;
+        generatePlayerSection(peserta, jumlahSesi, jumlahPanah);
+        
+        // LOAD DATA SCORE YANG SUDAH ADA untuk peserta ini
+        setTimeout(() => {
+            loadExistingScores(pesertaId, jumlahPanah);
+        }, 100);
+    }
+}
+
+// Fungsi untuk load data score yang sudah tersimpan
+function loadExistingScores(pesertaId, jumlahPanah) {
+    const playerId = `peserta_${pesertaId}`;
+    
     <?php 
         if(isset($mysql_data_score)) {
+            // Reset pointer ke awal
+            mysqli_data_seek($mysql_data_score, 0);
+            
             while($jatuh = mysqli_fetch_array($mysql_data_score)) { ?> 
-                document.getElementById("peserta_<?= $jatuh['peserta_id'] ?>_a<?= $jatuh['arrow'] ?>_s<?= $jatuh['session'] ?>").value = "<?= $jatuh['score'] ?>";
-                hitungPerArrow('peserta_<?= $jatuh['peserta_id'] ?>', '<?= $jatuh['arrow'] ?>', '<?= $jatuh['session'] ?>','<?= $show_score_board['jumlah_anak_panah'] ?>')
+                // Cek apakah data ini untuk peserta yang dipilih
+                if(<?= $jatuh['peserta_id'] ?> == pesertaId) {
+                    const inputElement = document.getElementById("peserta_<?= $jatuh['peserta_id'] ?>_a<?= $jatuh['arrow'] ?>_s<?= $jatuh['session'] ?>");
+                    if(inputElement) {
+                        inputElement.value = "<?= $jatuh['score'] ?>";
+                        validateArrowInput(inputElement); // Apply styling
+                        hitungPerArrow('peserta_<?= $jatuh['peserta_id'] ?>', '<?= $jatuh['arrow'] ?>', '<?= $jatuh['session'] ?>', jumlahPanah, null);
+                    }
+                }
             <?php } ?>
         <?php }
-     ?> 
+    ?> 
     
-    function goBack() {
-        window.history.back();
-    }
+    console.log("✅ Data loaded for peserta:", pesertaId);
+}
 
-    function openScoreBoard(jumlahSesi_data, jumlahPanah_data) {
-        const jumlahSesi = parseInt(jumlahSesi_data);
-        const jumlahPanah = parseInt(jumlahPanah_data);
-        document.getElementById('panahCount').textContent = jumlahSesi * jumlahPanah;
-        generatePlayerSections(jumlahSesi, jumlahPanah);
-        document.getElementById('setupForm').style.display = 'none';
-        document.getElementById('scorecardContainer').style.display = 'block';
-        document.querySelector('.container').style.maxWidth = '1200px';
-    }
+function changePeserta() {
+    // Reset selection
+    selectedPesertaId = null;
+    
+    // Reset dropdown text
+    const dropdownText = document.getElementById('dropdownText');
+    if (dropdownText) dropdownText.textContent = 'Pilih Peserta';
+    
+    // Show selector, hide scorecard content
+    const selectorInline = document.getElementById('pesertaSelectorInline');
+    const selectedInfo = document.getElementById('selectedPesertaInfo');
+    const scorecardTitle = document.getElementById('scorecardTitle');
+    const exportBtn = document.getElementById('exportBtn');
+    
+    if (selectorInline) selectorInline.style.display = 'block';
+    if (selectedInfo) selectedInfo.classList.add('hidden');
+    if (scorecardTitle) scorecardTitle.style.display = 'none';
+    if (exportBtn) exportBtn.style.visibility = 'hidden';
+    
+    // Clear scorecard
+    const container = document.getElementById('playersContainer');
+    if (container) container.innerHTML = '';
+}
 
-    function generatePlayerSections(jumlahSesi, jumlahPanah) {
-        const playersContainer = document.getElementById('playersContainer');
-        playersContainer.innerHTML = '';
+function goBack() {
+    window.history.back();
+}
 
-        pesertaData.forEach((peserta, index) => {
-            const playerId = `peserta_${peserta.id}`;
-            const playerName = peserta.nama_peserta;
-            
-            const playerSection = document.createElement('div');
-            playerSection.className = 'player-section';
-            playerSection.innerHTML = `
-                <div class="player-header">
-                    ${playerName} (${peserta.jenis_kelamin}) ${typeof peserta.total_score !== 'undefined' ? ` - Juara ${index + 1}` : ''}
-                </div>
-                <div class="score-table-container">
-                    <table class="score-table">
-                        <thead>
-                            <tr>
-                                <th rowspan="2" style="width: 60px;">Sesi</th>
-                                <th colspan="${jumlahPanah}">Anak Panah</th>
-                                <th rowspan="2" style="width: 60px;">Total</th>
-                                <th rowspan="2" style="width: 60px;">End</th>
-                            </tr>
-                            <tr>
-                                ${Array.from({length: jumlahPanah}, (_, i) => `<th style="width: 50px;">${i + 1}</th>`).join('')}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${generateTableRows(playerId, jumlahSesi, jumlahPanah)}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="total-summary" id="${playerId}_summary">
-                    <div style="font-size: 14px; margin-bottom: 8px;">Total Keseluruhan</div>
-                    <div class="grand-total" id="${playerId}_grand_total">0 poin</div>
-                    ${typeof peserta.x_score !== 'undefined' ? `<div class="x-count">X Score: ${peserta.x_score}</div>` : ''}
-                </div>
-            `;
-            
-            playersContainer.appendChild(playerSection);
-        });
-    }
+function openScoreBoard(jumlahSesi_data, jumlahPanah_data) {
+    const jumlahSesi = parseInt(jumlahSesi_data);
+    const jumlahPanah = parseInt(jumlahPanah_data);
+    document.getElementById('panahCount').textContent = jumlahSesi * jumlahPanah;
+    generatePlayerSections(jumlahSesi, jumlahPanah);
+    const setupForm = document.getElementById('setupForm');
+    const scorecardContainer = document.getElementById('scorecardContainer');
+    if (setupForm) setupForm.style.display = 'none';
+    if (scorecardContainer) scorecardContainer.style.display = 'block';
+    document.querySelector('.container').style.maxWidth = '1200px';
+}
 
-    function generateTableRows(playerId, jumlahSesi, jumlahPanah) {
-        let rowsHtml = '';
+function generatePlayerSections(jumlahSesi, jumlahPanah) {
+    const playersContainer = document.getElementById('playersContainer');
+    if (!playersContainer) return;
+    playersContainer.innerHTML = '';
+
+    pesertaData.forEach((peserta, index) => {
+        const playerId = `peserta_${peserta.id}`;
+        const playerName = peserta.nama_peserta;
         
-        for (let session = 1; session <= jumlahSesi; session++) {
-            const arrowInputs = Array.from({length: jumlahPanah}, (_, arrow) => `
-                <td>
+        const playerSection = document.createElement('div');
+        playerSection.className = 'player-section';
+        playerSection.innerHTML = `
+            <div class="player-header">
+                ${playerName} (${peserta.jenis_kelamin}) ${typeof peserta.total_score !== 'undefined' ? ` - Juara ${index + 1}` : ''}
+            </div>
+            <div class="score-table-container">
+                <table class="score-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 60px;">Sesi</th>
+                            <th colspan="${jumlahPanah}">Anak Panah</th>
+                            <th rowspan="2" style="width: 60px;">Total</th>
+                            <th rowspan="2" style="width: 60px;">End</th>
+                        </tr>
+                        <tr>
+                            ${Array.from({length: jumlahPanah}, (_, i) => `<th style="width: 50px;">${i + 1}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${generateTableRows(playerId, jumlahSesi, jumlahPanah)}
+                    </tbody>
+                </table>
+            </div>
+            <div class="total-summary" id="${playerId}_summary">
+                <div style="font-size: 14px; margin-bottom: 8px;">Total Keseluruhan</div>
+                <div class="grand-total" id="${playerId}_grand_total">0 poin</div>
+                ${typeof peserta.x_score !== 'undefined' ? `<div class="x-count">X Score: ${peserta.x_score}</div>` : ''}
+            </div>
+        `;
+        
+        playersContainer.appendChild(playerSection);
+    });
+}
+
+function generatePlayerSection(peserta, jumlahSesi, jumlahPanah) {
+    const playerId = `peserta_${peserta.id}`;
+    const playerName = peserta.nama_peserta;
+    
+    const playersContainer = document.getElementById('playersContainer');
+    if (!playersContainer) return;
+    
+    playersContainer.innerHTML = `
+        <div class="player-section">
+            <div class="player-header">
+                ${playerName} (${peserta.jenis_kelamin})
+            </div>
+            <div class="score-table-container">
+                <table class="score-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 60px;">Sesi</th>
+                            <th colspan="${jumlahPanah}">Anak Panah</th>
+                            <th rowspan="2" style="width: 60px;">Total</th>
+                            <th rowspan="2" style="width: 60px;">End</th>
+                        </tr>
+                        <tr>
+                            ${Array.from({length: jumlahPanah}, (_, i) => `<th style="width: 50px;">${i + 1}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${generateTableRows(playerId, jumlahSesi, jumlahPanah)}
+                    </tbody>
+                </table>
+            </div>
+            <div class="total-summary" id="${playerId}_summary">
+                <div style="font-size: 14px; margin-bottom: 8px;">Total Keseluruhan</div>
+                <div class="grand-total" id="${playerId}_grand_total">0 poin</div>
+            </div>
+        </div>
+    `;
+}
+
+function generateTableRows(playerId, jumlahSesi, jumlahPanah) {
+    let rowsHtml = '';
+    
+    for (let session = 1; session <= jumlahSesi; session++) {
+        const arrowInputs = Array.from({length: jumlahPanah}, (_, arrow) => `
+            <td>
+                <input type="text" 
+                       class="arrow-input" 
+                       <?= (isset($_GET['rangking'])) ? 'disabled' : '' ?>
+                       id="${playerId}_a${arrow + 1}_s${session}"
+                       placeholder=""
+                       oninput="validateArrowInput(this);hitungPerArrow('${playerId}', '${arrow + 1}', '${session}','${jumlahPanah}', this)">
+            </td>
+        `).join('');
+        
+        rowsHtml += `
+            <tr class="session-row">
+                <td class="session-label">S${session}</td>
+                ${arrowInputs}
+                <td class="total-cell">
                     <input type="text" 
                            class="arrow-input" 
-                           <?= (isset($_GET['rangking'])) ? 'disabled' : '' ?>
-                           id="${playerId}_a${arrow + 1}_s${session}"
-                           placeholder=""
-                           oninput="validateArrowInput(this);hitungPerArrow('${playerId}', '${arrow + 1}', '${session}','${jumlahPanah}', this)">
+                           id="${playerId}_total_a${session}"
+                           readonly
+                           style="background: rgba(253, 203, 110, 0.1); border-color: #e17055;">
                 </td>
-            `).join('');
-            
-            rowsHtml += `
-                <tr class="session-row">
-                    <td class="session-label">S${session}</td>
-                    ${arrowInputs}
-                    <td class="total-cell">
-                        <input type="text" 
-                               class="arrow-input" 
-                               id="${playerId}_total_a${session}"
-                               readonly
-                               style="background: rgba(253, 203, 110, 0.1); border-color: #e17055;">
-                    </td>
-                    <td class="end-cell">
-                        <input type="text" 
-                               class="arrow-input" 
-                               id="${playerId}_end_a${session}"
-                               readonly
-                               style="background: rgba(0, 184, 148, 0.1); border-color: #00b894;">
-                    </td>
-                </tr>
-            `;
-        }
-        
-        return rowsHtml;
+                <td class="end-cell">
+                    <input type="text" 
+                           class="arrow-input" 
+                           id="${playerId}_end_a${session}"
+                           readonly
+                           style="background: rgba(0, 184, 148, 0.1); border-color: #00b894;">
+                </td>
+            </tr>
+        `;
     }
+    
+    return rowsHtml;
+}
 
-    function hitungPerArrow(playerId, arrow, session, totalArrow, el) {
-        let sessionTotal = 0;
-        
-        for(let a = 1; a <= totalArrow; a++) {
-            const input = document.getElementById(`${playerId}_a${a}_s${session}`);
-            if(input && input.value) {
-                let val = input.value.trim().toLowerCase();
-                let score = 0;
-                if (val === "x") {
-                    score = 10;
-                } else if (val === "m") {
-                    score = 0;
-                } else if (!isNaN(val) && val !== "") {
-                    score = parseInt(val);
-                }
-                sessionTotal += score;
+function hitungPerArrow(playerId, arrow, session, totalArrow, el) {
+    let sessionTotal = 0;
+    
+    for(let a = 1; a <= totalArrow; a++) {
+        const input = document.getElementById(`${playerId}_a${a}_s${session}`);
+        if(input && input.value) {
+            let val = input.value.trim().toLowerCase();
+            let score = 0;
+            if (val === "x") {
+                score = 10;
+            } else if (val === "m") {
+                score = 0;
+            } else if (!isNaN(val) && val !== "") {
+                score = parseInt(val);
             }
+            sessionTotal += score;
         }
-        
-        const totalInput = document.getElementById(`${playerId}_total_a${session}`);
-        if(totalInput) {
-            totalInput.value = sessionTotal;
-        }
-        
-        let maxSession = 20;
-        let runningTotal = 0;
-        
-        for(let s = 1; s <= maxSession; s++) {
-            const sessionTotalInput = document.getElementById(`${playerId}_total_a${s}`);
-            const sessionEndInput = document.getElementById(`${playerId}_end_a${s}`);
-            
-            if(sessionTotalInput && sessionEndInput) {
-                if(sessionTotalInput.value && sessionTotalInput.value !== '') {
-                    runningTotal += parseInt(sessionTotalInput.value) || 0;
-                }
-                sessionEndInput.value = runningTotal;
-            } else {
-                break;
-            }
-        }
-        
-        const grandTotalElement = document.getElementById(`${playerId}_grand_total`);
-        if(grandTotalElement) {
-            grandTotalElement.innerText = runningTotal + " poin";
-        }
-        
-        if(el != null) {
-            let arr_playerID = playerId.split("_");
-            let nama = "Marsha and The Bear";
-            
-            fetch("", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: "save_score=1" +
-                    "&nama=" + encodeURIComponent(nama) +
-                    "&peserta_id=" + encodeURIComponent(arr_playerID[1]) +
-                    "&arrow=" + encodeURIComponent(arrow) +
-                    "&session=" + encodeURIComponent(session) + 
-                    "&score=" + encodeURIComponent(document.getElementById(el.id).value)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("Score saved: " + data.message);
-            })
-            .catch(err => console.error(err));
-        }
-        return 0;
     }
-
-    function validateArrowInput(el) {
-        let val = el.value.trim().toLowerCase();
-
-        if (!/^(10|[0-9]|x|m)?$/i.test(val)) {
-            el.value = "";
-            return;
-        }
+    
+    const totalInput = document.getElementById(`${playerId}_total_a${session}`);
+    if(totalInput) {
+        totalInput.value = sessionTotal;
+    }
+    
+    let maxSession = 20;
+    let runningTotal = 0;
+    
+    for(let s = 1; s <= maxSession; s++) {
+        const sessionTotalInput = document.getElementById(`${playerId}_total_a${s}`);
+        const sessionEndInput = document.getElementById(`${playerId}_end_a${s}`);
         
-        if (val === 'x' || val === 'X') {
-            el.style.background = 'rgba(40, 167, 69, 0.1)';
-            el.style.borderColor = '#28a745';
-            el.style.color = '#28a745';
-            el.style.fontWeight = '700';
-        } else if (val === 'm' || val === 'M') {
-            el.style.background = 'rgba(220, 53, 69, 0.1)';
-            el.style.borderColor = '#dc3545';
-            el.style.color = '#dc3545';
-            el.style.fontWeight = '700';
-        } else if (val === '10') {
-            el.style.background = 'rgba(40, 167, 69, 0.1)';
-            el.style.borderColor = '#28a745';
-            el.style.color = '#28a745';
-            el.style.fontWeight = '700';
-        } else if (val === '9' || val === '8') {
-            el.style.background = 'rgba(255, 193, 7, 0.1)';
-            el.style.borderColor = '#ffc107';
-            el.style.color = '#856404';
-            el.style.fontWeight = '600';
+        if(sessionTotalInput && sessionEndInput) {
+            if(sessionTotalInput.value && sessionTotalInput.value !== '') {
+                runningTotal += parseInt(sessionTotalInput.value) || 0;
+            }
+            sessionEndInput.value = runningTotal;
         } else {
-            el.style.background = 'transparent';
-            el.style.borderColor = 'transparent';
-            el.style.color = '#333';
-            el.style.fontWeight = '600';
+            break;
         }
     }
-
-    function editScorecard() {
-        document.getElementById('setupForm').style.display = 'block';
-        document.getElementById('scorecardContainer').style.display = 'none';
-        document.querySelector('.container').style.maxWidth = '500px'; 
+    
+    const grandTotalElement = document.getElementById(`${playerId}_grand_total`);
+    if(grandTotalElement) {
+        grandTotalElement.innerText = runningTotal + " poin";
     }
-
-    // FUNGSI EXPORT EXCEL UNTUK SCORECARD DETAIL
-    function exportScorecardToExcel() {
-        const wb = XLSX.utils.book_new();
+    
+    // AUTO SAVE - Menggunakan sistem yang sudah ada
+    if(el != null) {
+        let arr_playerID = playerId.split("_");
+        let scoreValue = el.value.trim();
         
-        // Dapatkan info kategori dan kegiatan
-        const categoryName = "<?= htmlspecialchars($kategoriData['name']) ?>";
-        const eventName = "<?= htmlspecialchars($kegiatanData['nama_kegiatan']) ?>";
+        // Tampilkan indikator saving (border orange)
+        el.style.borderColor = '#ffa500';
+        el.style.opacity = '0.7';
         
-        // Dapatkan jumlah sesi dan jumlah panah dari peserta pertama
-        const firstPlayerSection = document.querySelector('.player-section');
-        const firstTable = firstPlayerSection ? firstPlayerSection.querySelector('.score-table') : null;
-        let jumlahSesi = 0;
-        let jumlahPanah = 0;
-        
-        if (firstTable) {
-            // Hitung jumlah sesi dari baris tbody
-            const sessionRows = firstTable.querySelectorAll('tbody tr');
-            jumlahSesi = sessionRows.length;
-            
-            // Hitung jumlah panah dari header baris kedua (th tanpa rowspan/colspan)
-            const secondHeaderRow = firstTable.querySelectorAll('thead tr:nth-child(2) th');
-            jumlahPanah = secondHeaderRow.length;
-            
-            console.log('Jumlah Sesi:', jumlahSesi);
-            console.log('Jumlah Panah:', jumlahPanah);
-        }
-        
-        // Jika masih 0, coba deteksi dari input yang ada
-        if (jumlahPanah === 0 && pesertaData.length > 0) {
-            const firstPlayerId = `peserta_${pesertaData[0].id}`;
-            let arrowCount = 1;
-            while (document.getElementById(`${firstPlayerId}_a${arrowCount}_s1`)) {
-                arrowCount++;
-            }
-            jumlahPanah = arrowCount - 1;
-            console.log('Jumlah Panah (dari input):', jumlahPanah);
-        }
-        
-        // ============ SHEET 1: REKAP TOTAL ============
-        const rekapData = [];
-        
-        // Header untuk sheet rekap
-        rekapData.push([categoryName]);
-        rekapData.push([eventName]);
-        rekapData.push([]);
-        
-        const rekapHeaders = ['No', 'Nama'];
-        for (let i = 1; i <= jumlahSesi; i++) {
-            rekapHeaders.push(`Rambahan ${i}`);
-        }
-        rekapHeaders.push('Total');
-        rekapData.push(rekapHeaders);
-        
-        // Isi data rekap
-        pesertaData.forEach((peserta, index) => {
-            const playerId = `peserta_${peserta.id}`;
-            const row = [
-                index + 1,
-                peserta.nama_peserta
-            ];
-            
-            for (let s = 1; s <= jumlahSesi; s++) {
-                const totalInput = document.getElementById(`${playerId}_total_a${s}`);
-                const value = totalInput ? (totalInput.value || '0') : '0';
-                row.push(value);
-            }
-            
-            const grandTotalEl = document.getElementById(`${playerId}_grand_total`);
-            const grandTotal = grandTotalEl ? grandTotalEl.textContent.replace(' poin', '') : '0';
-            row.push(grandTotal);
-            
-            rekapData.push(row);
-        });
-        
-        const wsRekap = XLSX.utils.aoa_to_sheet(rekapData);
-        
-        // Set lebar kolom untuk sheet rekap
-        const rekapColWidths = [
-            { wch: 5 },
-            { wch: 20 }
-        ];
-        for (let i = 0; i < jumlahSesi; i++) {
-            rekapColWidths.push({ wch: 12 });
-        }
-        rekapColWidths.push({ wch: 12 });
-        wsRekap['!cols'] = rekapColWidths;
-        
-        // ============ SHEET 2: TRAINING (HORIZONTAL LAYOUT) ============
-        const trainingData = [];
-        
-        // Header utama
-        trainingData.push([categoryName]);
-        trainingData.push([eventName]);
-        trainingData.push([]);
-        
-        pesertaData.forEach((peserta, pesertaIndex) => {
-            const playerId = `peserta_${peserta.id}`;
-            
-            // Spacing antar peserta
-            if (pesertaIndex > 0) {
-                trainingData.push([]);
-            }
-            
-            // Header peserta
-            trainingData.push([`Rank#${pesertaIndex + 1} ${peserta.nama_peserta}`]);
-            
-            // Header kolom: Rambahan | Shot 1 | Shot 2 | ... | Total | End
-            const headerRow = ['Rambahan'];
-            for (let a = 1; a <= jumlahPanah; a++) {
-                headerRow.push(`Shot ${a}`);
-            }
-            headerRow.push('Total');
-            headerRow.push('End');
-            trainingData.push(headerRow);
-            
-            // Data setiap rambahan (per baris)
-            for (let s = 1; s <= jumlahSesi; s++) {
-                const row = [s]; // Nomor rambahan
-                
-                // Isi nilai setiap shot
-                for (let a = 1; a <= jumlahPanah; a++) {
-                    const input = document.getElementById(`${playerId}_a${a}_s${s}`);
-                    const value = input ? (input.value || '') : '';
-                    row.push(value);
+        fetch("", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: "save_score=1" +
+                "&peserta_id=" + encodeURIComponent(arr_playerID[1]) +
+                "&arrow=" + encodeURIComponent(arrow) +
+                "&session=" + encodeURIComponent(session) + 
+                "&score=" + encodeURIComponent(scoreValue)
+        })
+        .then(response => {
+            // Coba parse sebagai JSON, jika gagal tetap lanjut
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch(e) {
+                    return { status: 'success', message: text };
                 }
-                
-                // Total rambahan ini
-                const totalInput = document.getElementById(`${playerId}_total_a${s}`);
-                const totalValue = totalInput ? (totalInput.value || '0') : '0';
-                row.push(totalValue);
-                
-                // End (akumulasi sampai rambahan ini)
-                const endInput = document.getElementById(`${playerId}_end_a${s}`);
-                const endValue = endInput ? (endInput.value || '0') : '0';
-                row.push(endValue);
-                
-                trainingData.push(row);
-            }
+            });
+        })
+        .then(data => {
+            console.log("✅ Score saved:", data);
+            
+            // Tampilkan indikator berhasil (border hijau)
+            el.style.borderColor = '#28a745';
+            el.style.opacity = '1';
+            
+            // Kembalikan style setelah 1 detik
+            setTimeout(() => {
+                validateArrowInput(el);
+            }, 1000);
+        })
+        .catch(err => {
+            console.error("❌ Save error:", err);
+            
+            // Tampilkan indikator error (border merah)
+            el.style.borderColor = '#dc3545';
+            el.style.opacity = '1';
+            
+            // Kembalikan style setelah 2 detik
+            setTimeout(() => {
+                validateArrowInput(el);
+            }, 2000);
         });
-        
-        const wsTraining = XLSX.utils.aoa_to_sheet(trainingData);
-        
-        // Set lebar kolom untuk sheet training
-        const trainingColWidths = [
-            { wch: 12 } // Kolom Rambahan
-        ];
-        for (let i = 0; i < jumlahPanah; i++) {
-            trainingColWidths.push({ wch: 8 }); // Kolom Shot
-        }
-        trainingColWidths.push({ wch: 10 }); // Total
-        trainingColWidths.push({ wch: 10 }); // End
-        wsTraining['!cols'] = trainingColWidths;
-        
-        // Tambahkan sheet dengan urutan yang benar
-        XLSX.utils.book_append_sheet(wb, wsRekap, "Rekap Total");
-        XLSX.utils.book_append_sheet(wb, wsTraining, "Training");
-        
-        const fileName = `Scorecard_${categoryName}_${new Date().toISOString().split('T')[0]}.xlsx`;
-        XLSX.writeFile(wb, fileName);
     }
+    return 0;
+}
+
+function validateArrowInput(el) {
+    let val = el.value.trim().toLowerCase();
+
+    if (!/^(10|[0-9]|x|m)?$/i.test(val)) {
+        el.value = "";
+        return;
+    }
+    
+    if (val === 'x' || val === 'X') {
+        el.style.background = 'rgba(40, 167, 69, 0.1)';
+        el.style.borderColor = '#28a745';
+        el.style.color = '#28a745';
+        el.style.fontWeight = '700';
+    } else if (val === 'm' || val === 'M') {
+        el.style.background = 'rgba(220, 53, 69, 0.1)';
+        el.style.borderColor = '#dc3545';
+        el.style.color = '#dc3545';
+        el.style.fontWeight = '700';
+    } else if (val === '10') {
+        el.style.background = 'rgba(40, 167, 69, 0.1)';
+        el.style.borderColor = '#28a745';
+        el.style.color = '#28a745';
+        el.style.fontWeight = '700';
+    } else if (val === '9' || val === '8') {
+        el.style.background = 'rgba(255, 193, 7, 0.1)';
+        el.style.borderColor = '#ffc107';
+        el.style.color = '#856404';
+        el.style.fontWeight = '600';
+    } else {
+        el.style.background = 'transparent';
+        el.style.borderColor = 'transparent';
+        el.style.color = '#333';
+        el.style.fontWeight = '600';
+    }
+}
+
+function editScorecard() {
+    document.getElementById('setupForm').style.display = 'block';
+    document.getElementById('scorecardContainer').style.display = 'none';
+    document.querySelector('.container').style.maxWidth = '500px'; 
+}
+
+// FUNGSI EXPORT EXCEL UNTUK TABLE LIST
+function exportTableToExcel() {
+    const table = document.getElementById('scorecardTable');
+    if (!table) return;
+    
+    // Clone table untuk modifikasi
+    const tableClone = table.cloneNode(true);
+    
+    // Hapus kolom Aksi
+    tableClone.querySelectorAll('thead th:last-child').forEach(th => th.remove());
+    tableClone.querySelectorAll('tbody td:last-child').forEach(td => td.remove());
+    
+    // Buat HTML dengan styling
+    const htmlContent = `
+        <html xmlns:x="urn:schemas-microsoft-com:office:excel">
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                table { border-collapse: collapse; width: 100%; }
+                th, td { 
+                    border: 1px solid #000; 
+                    padding: 8px; 
+                    text-align: center;
+                }
+                th { 
+                    background-color: #000; 
+                    color: white; 
+                    font-weight: bold;
+                }
+            </style>
+        </head>
+        <body>${tableClone.outerHTML}</body>
+        </html>
+    `;
+    
+    const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Scorecard_List_${new Date().toISOString().split('T')[0]}.xls`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+// FUNGSI EXPORT EXCEL UNTUK SCORECARD DETAIL (2 Halaman dalam 1 File)
+function exportScorecardToExcel() {
+    const categoryName = document.querySelector('.category-name') ? document.querySelector('.category-name').textContent : 'Kategori';
+    const eventName = document.querySelector('.event-name') ? document.querySelector('.event-name').textContent : 'Event';
+    
+    const firstPlayerSection = document.querySelector('.player-section');
+    const firstTable = firstPlayerSection ? firstPlayerSection.querySelector('.score-table') : null;
+    let jumlahSesi = 0;
+    let jumlahPanah = 0;
+    
+    if (firstTable) {
+        const sessionRows = firstTable.querySelectorAll('tbody tr');
+        jumlahSesi = sessionRows.length;
+        
+        const secondHeaderRow = firstTable.querySelectorAll('thead tr:nth-child(2) th');
+        jumlahPanah = secondHeaderRow.length;
+    }
+    
+    if (jumlahPanah === 0 && pesertaData.length > 0) {
+        const firstPlayerId = `peserta_${pesertaData[0].id}`;
+        let arrowCount = 1;
+        while (document.getElementById(`${firstPlayerId}_a${arrowCount}_s1`)) {
+            arrowCount++;
+        }
+        jumlahPanah = arrowCount - 1;
+    }
+    
+    // ==================== Gabungan 2 Halaman dalam 1 File ====================
+    let fullHTML = `
+        <html xmlns:x="urn:schemas-microsoft-com:office:excel">
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; }
+                table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 6px; }
+                th { background-color: #000; color: white; font-weight: bold; text-align: center; }
+                td { text-align: center; }
+                h2, h3, h4 { font-family: Arial, sans-serif; font-weight: normal; }
+                .page-break { page-break-before: always; }
+            </style>
+        </head>
+        <body>
+    `;
+    
+    // ==================== Halaman 1: Rekap Total ====================
+    fullHTML += `<h2>${categoryName}</h2>`;
+    fullHTML += `<h3>${eventName}</h3>`;
+    fullHTML += `<table>`;
+    fullHTML += `<thead><tr>`;
+    fullHTML += `<th>No</th><th>Nama</th>`;
+    for (let i = 1; i <= jumlahSesi; i++) {
+        fullHTML += `<th>Rambahan ${i}</th>`;
+    }
+    fullHTML += `<th>Total</th></tr></thead><tbody>`;
+    
+    pesertaData.forEach((peserta, index) => {
+        const playerId = `peserta_${peserta.id}`;
+        fullHTML += `<tr>`;
+        fullHTML += `<td>${index + 1}</td>`;
+        fullHTML += `<td style="text-align: left;">${peserta.nama_peserta}</td>`;
+        
+        for (let s = 1; s <= jumlahSesi; s++) {
+            const totalInput = document.getElementById(`${playerId}_total_a${s}`);
+            const value = totalInput ? (totalInput.value || '0') : '0';
+            fullHTML += `<td>${value}</td>`;
+        }
+        
+        const grandTotalEl = document.getElementById(`${playerId}_grand_total`);
+        const grandTotal = grandTotalEl ? grandTotalEl.textContent.replace(' poin', '') : '0';
+        fullHTML += `<td style="font-weight: bold;">${grandTotal}</td>`;
+        fullHTML += `</tr>`;
+    });
+    
+    fullHTML += `</tbody></table>`;
+    
+    // ==================== Halaman 2: Training (Page Break) ====================
+    fullHTML += `<div class="page-break"></div>`;
+    fullHTML += `<h2>${categoryName}</h2>`;
+    fullHTML += `<h3>${eventName} - Training Detail</h3>`;
+    
+    pesertaData.forEach((peserta, pesertaIndex) => {
+        const playerId = `peserta_${peserta.id}`;
+        
+        fullHTML += `<h4 style="background-color: #ddd; padding: 8px; margin-top: 20px;">Rank#${pesertaIndex + 1} ${peserta.nama_peserta}</h4>`;
+        fullHTML += `<table>`;
+        fullHTML += `<thead><tr>`;
+        fullHTML += `<th>Rambahan</th>`;
+        
+        for (let a = 1; a <= jumlahPanah; a++) {
+            fullHTML += `<th>Shot ${a}</th>`;
+        }
+        fullHTML += `<th>Total</th>`;
+        fullHTML += `<th>End</th>`;
+        fullHTML += `</tr></thead><tbody>`;
+        
+        for (let s = 1; s <= jumlahSesi; s++) {
+            fullHTML += `<tr>`;
+            fullHTML += `<td style="font-weight: bold;">${s}</td>`;
+            
+            for (let a = 1; a <= jumlahPanah; a++) {
+                const input = document.getElementById(`${playerId}_a${a}_s${s}`);
+                const value = input ? (input.value || '') : '';
+                fullHTML += `<td>${value}</td>`;
+            }
+            
+            const totalInput = document.getElementById(`${playerId}_total_a${s}`);
+            const totalValue = totalInput ? (totalInput.value || '0') : '0';
+            fullHTML += `<td style="font-weight: bold;">${totalValue}</td>`;
+            
+            const endInput = document.getElementById(`${playerId}_end_a${s}`);
+            const endValue = endInput ? (endInput.value || '0') : '0';
+            fullHTML += `<td style="font-weight: bold;">${endValue}</td>`;
+            
+            fullHTML += `</tr>`;
+        }
+        
+        fullHTML += `</tbody></table>`;
+    });
+    
+    fullHTML += `</body></html>`;
+    
+    // Download 1 File dengan 2 Halaman
+    const blob = new Blob([fullHTML], { type: 'application/vnd.ms-excel' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Scorecard_${categoryName}_${new Date().toISOString().split('T')[0]}.xls`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
 </script>
     </body>
     </html>
