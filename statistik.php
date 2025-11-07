@@ -48,7 +48,7 @@ function getKategoriDominan($rankings) {
 }
 
 // Fungsi untuk mendapatkan statistik bracket/aduan peserta
-function getBracketStatistics($conn, $peserta_id) {
+function getBracketStatistics($conn, $peserta_nama) {
     $stats = [
         'total_bracket' => 0,
         'bracket_champion' => 0,
@@ -59,10 +59,12 @@ function getBracketStatistics($conn, $peserta_id) {
         'bracket_history' => []
     ];
     
-    // Hitung jumlah sebagai champion
-    $queryChampion = "SELECT COUNT(*) as total FROM bracket_champions WHERE champion_id = ?";
+    // Hitung jumlah sebagai champion - cari berdasarkan nama peserta
+    $queryChampion = "SELECT COUNT(*) as total FROM bracket_champions bc
+                      INNER JOIN peserta p ON bc.champion_id = p.id
+                      WHERE p.nama_peserta = ?";
     $stmtChampion = $conn->prepare($queryChampion);
-    $stmtChampion->bind_param("i", $peserta_id);
+    $stmtChampion->bind_param("s", $peserta_nama);
     $stmtChampion->execute();
     $resultChampion = $stmtChampion->get_result();
     if ($row = $resultChampion->fetch_assoc()) {
@@ -71,9 +73,11 @@ function getBracketStatistics($conn, $peserta_id) {
     $stmtChampion->close();
     
     // Hitung jumlah sebagai runner up
-    $queryRunnerUp = "SELECT COUNT(*) as total FROM bracket_champions WHERE runner_up_id = ?";
+    $queryRunnerUp = "SELECT COUNT(*) as total FROM bracket_champions bc
+                      INNER JOIN peserta p ON bc.runner_up_id = p.id
+                      WHERE p.nama_peserta = ?";
     $stmtRunnerUp = $conn->prepare($queryRunnerUp);
-    $stmtRunnerUp->bind_param("i", $peserta_id);
+    $stmtRunnerUp->bind_param("s", $peserta_nama);
     $stmtRunnerUp->execute();
     $resultRunnerUp = $stmtRunnerUp->get_result();
     if ($row = $resultRunnerUp->fetch_assoc()) {
@@ -82,9 +86,11 @@ function getBracketStatistics($conn, $peserta_id) {
     $stmtRunnerUp->close();
     
     // Hitung jumlah sebagai third place
-    $queryThird = "SELECT COUNT(*) as total FROM bracket_champions WHERE third_place_id = ?";
+    $queryThird = "SELECT COUNT(*) as total FROM bracket_champions bc
+                   INNER JOIN peserta p ON bc.third_place_id = p.id
+                   WHERE p.nama_peserta = ?";
     $stmtThird = $conn->prepare($queryThird);
-    $stmtThird->bind_param("i", $peserta_id);
+    $stmtThird->bind_param("s", $peserta_nama);
     $stmtThird->execute();
     $resultThird = $stmtThird->get_result();
     if ($row = $resultThird->fetch_assoc()) {
@@ -93,9 +99,11 @@ function getBracketStatistics($conn, $peserta_id) {
     $stmtThird->close();
     
     // Hitung matches won
-    $queryWon = "SELECT COUNT(*) as total FROM bracket_matches WHERE winner_id = ?";
+    $queryWon = "SELECT COUNT(*) as total FROM bracket_matches bm
+                 INNER JOIN peserta p ON bm.winner_id = p.id
+                 WHERE p.nama_peserta = ?";
     $stmtWon = $conn->prepare($queryWon);
-    $stmtWon->bind_param("i", $peserta_id);
+    $stmtWon->bind_param("s", $peserta_nama);
     $stmtWon->execute();
     $resultWon = $stmtWon->get_result();
     if ($row = $resultWon->fetch_assoc()) {
@@ -104,9 +112,11 @@ function getBracketStatistics($conn, $peserta_id) {
     $stmtWon->close();
     
     // Hitung matches lost
-    $queryLost = "SELECT COUNT(*) as total FROM bracket_matches WHERE loser_id = ?";
+    $queryLost = "SELECT COUNT(*) as total FROM bracket_matches bm
+                  INNER JOIN peserta p ON bm.loser_id = p.id
+                  WHERE p.nama_peserta = ?";
     $stmtLost = $conn->prepare($queryLost);
-    $stmtLost->bind_param("i", $peserta_id);
+    $stmtLost->bind_param("s", $peserta_nama);
     $stmtLost->execute();
     $resultLost = $stmtLost->get_result();
     if ($row = $resultLost->fetch_assoc()) {
@@ -128,20 +138,23 @@ function getBracketStatistics($conn, $peserta_id) {
             bc.bracket_size,
             bc.created_at,
             CASE 
-                WHEN bc.champion_id = ? THEN 'champion'
-                WHEN bc.runner_up_id = ? THEN 'runner_up'
-                WHEN bc.third_place_id = ? THEN 'third_place'
+                WHEN p1.nama_peserta = ? THEN 'champion'
+                WHEN p2.nama_peserta = ? THEN 'runner_up'
+                WHEN p3.nama_peserta = ? THEN 'third_place'
                 ELSE 'participant'
             END as position
         FROM bracket_champions bc
         INNER JOIN kegiatan k ON bc.kegiatan_id = k.id
         INNER JOIN categories c ON bc.category_id = c.id
-        WHERE bc.champion_id = ? OR bc.runner_up_id = ? OR bc.third_place_id = ?
+        LEFT JOIN peserta p1 ON bc.champion_id = p1.id
+        LEFT JOIN peserta p2 ON bc.runner_up_id = p2.id
+        LEFT JOIN peserta p3 ON bc.third_place_id = p3.id
+        WHERE p1.nama_peserta = ? OR p2.nama_peserta = ? OR p3.nama_peserta = ?
         ORDER BY bc.created_at DESC
     ";
     
     $stmtHistory = $conn->prepare($queryHistory);
-    $stmtHistory->bind_param("iiiiii", $peserta_id, $peserta_id, $peserta_id, $peserta_id, $peserta_id, $peserta_id);
+    $stmtHistory->bind_param("ssssss", $peserta_nama, $peserta_nama, $peserta_nama, $peserta_nama, $peserta_nama, $peserta_nama);
     $stmtHistory->execute();
     $resultHistory = $stmtHistory->get_result();
     
@@ -162,14 +175,15 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     header("Pragma: no-cache");
     header("Expires: 0");
     
-    $query = "SELECT DISTINCT 
-                p.id,
+    $query = "SELECT 
+                MIN(p.id) as id,
                 p.nama_peserta,
                 p.jenis_kelamin,
                 p.asal_kota,
                 p.nama_club,
                 p.sekolah
               FROM peserta p
+              GROUP BY p.nama_peserta, p.jenis_kelamin, p.asal_kota, p.nama_club, p.sekolah
               ORDER BY p.nama_peserta ASC";
     
     $result = $conn->query($query);
@@ -210,14 +224,15 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
             INNER JOIN categories c ON sb.category_id = c.id
             WHERE EXISTS (
                 SELECT 1 FROM score s 
+                INNER JOIN peserta p2 ON s.peserta_id = p2.id
                 WHERE s.score_board_id = sb.id 
-                AND s.peserta_id = ?
+                AND p2.nama_peserta = ?
             )
             ORDER BY sb.created DESC
         ";
         
         $stmtRank = $conn->prepare($queryRanking);
-        $stmtRank->bind_param("i", $peserta['id']);
+        $stmtRank->bind_param("s", $peserta['nama_peserta']);
         $stmtRank->execute();
         $resultRank = $stmtRank->get_result();
         
@@ -288,7 +303,16 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
             
             $ranking = 0;
             foreach ($pesertaScores as $index => $ps) {
-                if ($ps['peserta_id'] == $peserta['id']) {
+                // Cek berdasarkan nama peserta, bukan ID
+                $queryCheckName = "SELECT nama_peserta FROM peserta WHERE id = ?";
+                $stmtCheckName = $conn->prepare($queryCheckName);
+                $stmtCheckName->bind_param("i", $ps['peserta_id']);
+                $stmtCheckName->execute();
+                $resultCheckName = $stmtCheckName->get_result();
+                $checkName = $resultCheckName->fetch_assoc();
+                $stmtCheckName->close();
+                
+                if ($checkName && $checkName['nama_peserta'] == $peserta['nama_peserta']) {
                     $ranking = $index + 1;
                     break;
                 }
@@ -309,7 +333,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
         $stmtRank->close();
         
         // Ambil statistik bracket
-        $bracketStats = getBracketStatistics($conn, $peserta['id']);
+        $bracketStats = getBracketStatistics($conn, $peserta['nama_peserta']);
         $bracketWinRate = ($bracketStats['bracket_matches_won'] + $bracketStats['bracket_matches_lost']) > 0 
             ? round(($bracketStats['bracket_matches_won'] / ($bracketStats['bracket_matches_won'] + $bracketStats['bracket_matches_lost'])) * 100, 1) . '%'
             : '0%';
@@ -349,15 +373,16 @@ $nama = $_GET['nama'] ?? '';
 $club = $_GET['club'] ?? '';
 $kategori_filter = $_GET['kategori'] ?? '';
 
-// Query untuk mengambil semua peserta unik
-$query = "SELECT DISTINCT 
-            p.id,
+// Query untuk mengambil semua peserta unik - gunakan GROUP BY untuk memastikan tidak ada duplikat
+// Prioritaskan ID terkecil jika ada nama yang sama
+$query = "SELECT 
+            MIN(p.id) as id,
             p.nama_peserta,
             p.jenis_kelamin,
             p.asal_kota,
             p.nama_club,
             p.sekolah,
-            p.tanggal_lahir
+            MAX(p.tanggal_lahir) as tanggal_lahir
           FROM peserta p
           WHERE 1=1";
 
@@ -382,6 +407,8 @@ if (!empty($club)) {
     $types .= "s";
 }
 
+// GROUP BY nama_peserta untuk menggabungkan peserta dengan nama sama
+$query .= " GROUP BY p.nama_peserta, p.jenis_kelamin, p.asal_kota, p.nama_club, p.sekolah";
 $query .= " ORDER BY p.nama_peserta ASC";
 
 if (!empty($params)) {
@@ -401,8 +428,19 @@ $totalKategoriC = 0;
 $totalKategoriD = 0;
 $totalKategoriE = 0;
 
+// Array untuk tracking peserta yang sudah diproses (hindari duplikat berdasarkan ID)
+$processedPeserta = [];
+
 while ($peserta = $result->fetch_assoc()) {
+    // Skip jika peserta dengan ID ini sudah diproses
+    if (isset($processedPeserta[$peserta['id']])) {
+        continue;
+    }
+    
+    // Tandai peserta ini sudah diproses
+    $processedPeserta[$peserta['id']] = true;
     // Ambil semua ranking peserta ini dari berbagai turnamen
+    // Cari berdasarkan nama_peserta untuk menggabungkan semua ID dengan nama sama
     $queryRanking = "
         SELECT 
             sb.kegiatan_id,
@@ -416,14 +454,15 @@ while ($peserta = $result->fetch_assoc()) {
         INNER JOIN categories c ON sb.category_id = c.id
         WHERE EXISTS (
             SELECT 1 FROM score s 
+            INNER JOIN peserta p2 ON s.peserta_id = p2.id
             WHERE s.score_board_id = sb.id 
-            AND s.peserta_id = ?
+            AND p2.nama_peserta = ?
         )
         ORDER BY sb.created DESC
     ";
     
     $stmtRank = $conn->prepare($queryRanking);
-    $stmtRank->bind_param("i", $peserta['id']);
+    $stmtRank->bind_param("s", $peserta['nama_peserta']);
     $stmtRank->execute();
     $resultRank = $stmtRank->get_result();
     
@@ -494,7 +533,16 @@ while ($peserta = $result->fetch_assoc()) {
         
         $ranking = 0;
         foreach ($pesertaScores as $index => $ps) {
-            if ($ps['peserta_id'] == $peserta['id']) {
+            // Cek berdasarkan nama peserta, bukan ID
+            $queryCheckName = "SELECT nama_peserta FROM peserta WHERE id = ?";
+            $stmtCheckName = $conn->prepare($queryCheckName);
+            $stmtCheckName->bind_param("i", $ps['peserta_id']);
+            $stmtCheckName->execute();
+            $resultCheckName = $stmtCheckName->get_result();
+            $checkName = $resultCheckName->fetch_assoc();
+            $stmtCheckName->close();
+            
+            if ($checkName && $checkName['nama_peserta'] == $peserta['nama_peserta']) {
                 $ranking = $index + 1;
                 break;
             }
@@ -522,7 +570,7 @@ while ($peserta = $result->fetch_assoc()) {
     $stmtRank->close();
     
     // Ambil statistik bracket
-    $bracketStats = getBracketStatistics($conn, $peserta['id']);
+    $bracketStats = getBracketStatistics($conn, $peserta['nama_peserta']);
     
     $kategoriDominan = getKategoriDominan($rankings);
     
