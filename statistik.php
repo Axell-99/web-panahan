@@ -987,7 +987,7 @@ while ($peserta = $result->fetch_assoc()) {
                             <td>
                                 <span class="badge <?= $p['gender'] == 'Laki-laki' ? 'bg-primary' : 'bg-danger' ?>">
                                     <i class="fas <?= $p['gender'] == 'Laki-laki' ? 'fa-mars' : 'fa-venus' ?> me-1"></i>
-                                    <?= htmlspecialchars($p['gender']) ?>
+                                    <?= htmlspecialchars($p['??""']) ?>
                                 </span>
                             </td>
                             <td><?= $p['umur'] > 0 ? $p['umur'] . ' tahun' : '-' ?></td>
