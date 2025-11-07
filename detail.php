@@ -3382,7 +3382,7 @@ h3 {
     <div class="container">
         <?php if(isset($_GET['resource'])) { ?>
             <?php if($_GET['resource'] == 'form') { ?>
-                <a class="back-btn" href="detail.php?action=scorecard&resource=index&kegiatan_id=<?= $kegiatan_id ?>&category_id=<?= $category_id ?>">←</a>
+                <a class="back-btn" href="detail.php?id=<?= $kegiatan_id ?>&filter_kategori=<?= $category_id ?>">←</a>
                 <form action="" method="post">
                     <div class="setup-form" id="setupForm">
                         <input type="hidden" id="local_time" name="local_time">
