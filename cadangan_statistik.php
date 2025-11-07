@@ -861,21 +861,27 @@ while ($peserta = $result->fetch_assoc()) {
     </div>
 
     <div class="kategori-legend">
-        <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>Sistem Kategorisasi (Dinamis Berdasarkan Jumlah Peserta)</h5>
+        <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>Sistem Kategorisasi Berdasarkan Kuota Persentase</h5>
         <div>
-            <span class="legend-item bg-success text-white">🏆 Kategori A: Top 30% DAN Peringkat 1-3 (Sangat Baik)</span>
-            <span class="legend-item bg-primary text-white">🥈 Kategori B: Top 31-40% DAN Peringkat 4-10 (Baik)</span>
-            <span class="legend-item bg-info text-white">🥉 Kategori C: Top 41-60% (Cukup)</span>
-            <span class="legend-item bg-warning text-dark">📊 Kategori D: Top 61-80% (Perlu Latihan)</span>
-            <span class="legend-item bg-secondary text-white">📈 Kategori E: Bottom 20% / Belum Bertanding (Pemula)</span>
+            <span class="legend-item bg-success text-white">🏆 Kategori A: Ranking 1-3 (Juara 1, 2, 3)</span>
+            <span class="legend-item bg-primary text-white">🥈 Kategori B: 30% peserta terbaik (setelah ranking 3)</span>
+            <span class="legend-item bg-info text-white">🥉 Kategori C: 20% peserta berikutnya</span>
+            <span class="legend-item bg-warning text-dark">📊 Kategori D: Sisa peserta yang berkompetisi</span>
+            <span class="legend-item bg-secondary text-white">📈 Kategori E: Tidak mengikuti / Diskualifikasi</span>
         </div>
         <p class="mt-3 mb-0 text-muted small">
             <i class="fas fa-lightbulb me-1"></i>
-            <strong>Contoh:</strong> 
-            • Ranking 10 dari 11 peserta (90.9%) = Kategori E (hampir terakhir)
-            • Ranking 10 dari 50 peserta (20%) = Kategori B (top 40%)
-            • Ranking 3 dari 5 peserta (60%) = Kategori C (ranking bagus tapi persentase biasa)
-            <br>Sistem menggunakan kombinasi ranking absolut dan persentase relatif untuk penilaian yang lebih adil.
+            <strong>Contoh dengan 10 peserta:</strong> 
+            • Ranking 1-3 = Kategori A
+            • Ranking 4-6 = Kategori B (30% dari 10 = 3 orang)
+            • Ranking 7-8 = Kategori C (20% dari 10 = 2 orang)
+            • Ranking 9-10 = Kategori D (sisanya)
+            <br>
+            <strong>Contoh dengan 100 peserta:</strong> 
+            • Ranking 1-3 = Kategori A
+            • Ranking 4-33 = Kategori B (30% dari 100 = 30 orang)
+            • Ranking 34-53 = Kategori C (20% dari 100 = 20 orang)
+            • Ranking 54-100 = Kategori D (sisanya)
         </p>
     </div>
 
@@ -1250,7 +1256,7 @@ while ($peserta = $result->fetch_assoc()) {
                                         <th>Tanggal</th>
                                         <th>Ranking</th>
                                         <th>Total Peserta</th>
-                                        <!-- <th>Persentase</th> -->
+                                        <th>Persentase</th>
                                         <th>Kategori</th>
                                     </tr>
                                 </thead>
@@ -1354,7 +1360,7 @@ function showDetail(data) {
     } else {
         data.rankings.forEach((r, index) => {
             const katRank = r.kategori_ranking;
-            // const persentase = ((r.ranking / r.total_peserta) * 100).toFixed(1);
+            const persentase = ((r.ranking / r.total_peserta) * 100).toFixed(1);
             const row = `
                 <tr>
                     <td>${index + 1}</td>
@@ -1367,7 +1373,9 @@ function showDetail(data) {
                     <td class="text-center">
                         <span class="badge bg-dark">${r.total_peserta}</span>
                     </td>
-                    
+                    <td class="text-center">
+                        <span class="badge bg-light text-dark">${persentase}%</span>
+                    </td>
                     <td>
                         <span class="badge bg-${katRank.color} text-white">
                             ${katRank.icon} ${katRank.kategori}
