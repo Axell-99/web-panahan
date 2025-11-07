@@ -3,17 +3,34 @@ include 'panggil.php';
 include 'check_access.php';
 requireAdmin();
 
-// Fungsi untuk menentukan kategori berdasarkan ranking
-function getKategoriFromRanking($ranking) {
-    if ($ranking >= 1 && $ranking <= 3) {
+// Fungsi untuk menentukan kategori berdasarkan ranking dan total peserta
+function getKategoriFromRanking($ranking, $totalPeserta) {
+    // Jika hanya 1 peserta, otomatis kategori A
+    if ($totalPeserta <= 1) {
         return ['kategori' => 'A', 'label' => 'Sangat Baik', 'color' => 'success', 'icon' => '🏆'];
-    } elseif ($ranking >= 4 && $ranking <= 10) {
+    }
+    
+    // Hitung persentase ranking
+    $persentase = ($ranking / $totalPeserta) * 100;
+    
+    // Kategori A: Top 10% atau minimal ranking 1-3
+    if ($persentase <= 10 || $ranking <= 3) {
+        return ['kategori' => 'A', 'label' => 'Sangat Baik', 'color' => 'success', 'icon' => '🏆'];
+    }
+    // Kategori B: Top 11-30% atau ranking 4-10
+    elseif ($persentase <= 30 || $ranking <= 10) {
         return ['kategori' => 'B', 'label' => 'Baik', 'color' => 'primary', 'icon' => '🥈'];
-    } elseif ($ranking >= 11 && $ranking <= 20) {
+    }
+    // Kategori C: Top 31-60% atau ranking 11-20
+    elseif ($persentase <= 60 || $ranking <= 20) {
         return ['kategori' => 'C', 'label' => 'Cukup', 'color' => 'info', 'icon' => '🥉'];
-    } elseif ($ranking >= 21 && $ranking <= 32) {
+    }
+    // Kategori D: Top 61-80% atau ranking 21-32
+    elseif ($persentase <= 80 || $ranking <= 32) {
         return ['kategori' => 'D', 'label' => 'Perlu Latihan', 'color' => 'warning', 'icon' => '📊'];
-    } else {
+    }
+    // Kategori E: Bottom 20% atau ranking > 32
+    else {
         return ['kategori' => 'E', 'label' => 'Pemula', 'color' => 'secondary', 'icon' => '📈'];
     }
 }
@@ -27,7 +44,7 @@ function getKategoriDominan($rankings) {
     $kategoriCount = ['A' => 0, 'B' => 0, 'C' => 0, 'D' => 0, 'E' => 0];
     
     foreach ($rankings as $rank) {
-        $kat = getKategoriFromRanking($rank['ranking']);
+        $kat = getKategoriFromRanking($rank['ranking'], $rank['total_peserta']);
         $kategoriCount[$kat['kategori']]++;
     }
     
@@ -59,7 +76,7 @@ function getBracketStatistics($conn, $peserta_nama) {
         'bracket_history' => []
     ];
     
-    // Hitung jumlah sebagai champion - cari berdasarkan nama peserta
+    // Hitung jumlah sebagai champion
     $queryChampion = "SELECT COUNT(*) as total FROM bracket_champions bc
                       INNER JOIN peserta p ON bc.champion_id = p.id
                       WHERE p.nama_peserta = ?";
@@ -211,7 +228,6 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     
     $no = 1;
     while ($peserta = $result->fetch_assoc()) {
-        // Ambil semua ranking peserta ini
         $queryRanking = "
             SELECT 
                 sb.kegiatan_id,
@@ -301,9 +317,10 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
                 return $b['total_x'] - $a['total_x'];
             });
             
+            $totalPesertaTurnamen = count($pesertaScores);
             $ranking = 0;
+            
             foreach ($pesertaScores as $index => $ps) {
-                // Cek berdasarkan nama peserta, bukan ID
                 $queryCheckName = "SELECT nama_peserta FROM peserta WHERE id = ?";
                 $stmtCheckName = $conn->prepare($queryCheckName);
                 $stmtCheckName->bind_param("i", $ps['peserta_id']);
@@ -319,7 +336,11 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
             }
             
             if ($ranking > 0) {
-                $rankings[] = ['ranking' => $ranking, 'turnamen' => $turnamen['nama_kegiatan']];
+                $rankings[] = [
+                    'ranking' => $ranking, 
+                    'turnamen' => $turnamen['nama_kegiatan'],
+                    'total_peserta' => $totalPesertaTurnamen
+                ];
                 
                 if ($ranking == 1) $juara1++;
                 if ($ranking == 2) $juara2++;
@@ -332,7 +353,6 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
         
         $stmtRank->close();
         
-        // Ambil statistik bracket
         $bracketStats = getBracketStatistics($conn, $peserta['nama_peserta']);
         $bracketWinRate = ($bracketStats['bracket_matches_won'] + $bracketStats['bracket_matches_lost']) > 0 
             ? round(($bracketStats['bracket_matches_won'] / ($bracketStats['bracket_matches_won'] + $bracketStats['bracket_matches_lost'])) * 100, 1) . '%'
@@ -373,8 +393,6 @@ $nama = $_GET['nama'] ?? '';
 $club = $_GET['club'] ?? '';
 $kategori_filter = $_GET['kategori'] ?? '';
 
-// Query untuk mengambil semua peserta unik - gunakan GROUP BY untuk memastikan tidak ada duplikat
-// Prioritaskan ID terkecil jika ada nama yang sama
 $query = "SELECT 
             MIN(p.id) as id,
             p.nama_peserta,
@@ -407,7 +425,6 @@ if (!empty($club)) {
     $types .= "s";
 }
 
-// GROUP BY nama_peserta untuk menggabungkan peserta dengan nama sama
 $query .= " GROUP BY p.nama_peserta, p.jenis_kelamin, p.asal_kota, p.nama_club, p.sekolah";
 $query .= " ORDER BY p.nama_peserta ASC";
 
@@ -428,19 +445,15 @@ $totalKategoriC = 0;
 $totalKategoriD = 0;
 $totalKategoriE = 0;
 
-// Array untuk tracking peserta yang sudah diproses (hindari duplikat berdasarkan ID)
 $processedPeserta = [];
 
 while ($peserta = $result->fetch_assoc()) {
-    // Skip jika peserta dengan ID ini sudah diproses
     if (isset($processedPeserta[$peserta['id']])) {
         continue;
     }
     
-    // Tandai peserta ini sudah diproses
     $processedPeserta[$peserta['id']] = true;
-    // Ambil semua ranking peserta ini dari berbagai turnamen
-    // Cari berdasarkan nama_peserta untuk menggabungkan semua ID dengan nama sama
+    
     $queryRanking = "
         SELECT 
             sb.kegiatan_id,
@@ -531,9 +544,10 @@ while ($peserta = $result->fetch_assoc()) {
             return $b['total_x'] - $a['total_x'];
         });
         
+        $totalPesertaTurnamen = count($pesertaScores);
         $ranking = 0;
+        
         foreach ($pesertaScores as $index => $ps) {
-            // Cek berdasarkan nama peserta, bukan ID
             $queryCheckName = "SELECT nama_peserta FROM peserta WHERE id = ?";
             $stmtCheckName = $conn->prepare($queryCheckName);
             $stmtCheckName->bind_param("i", $ps['peserta_id']);
@@ -549,13 +563,14 @@ while ($peserta = $result->fetch_assoc()) {
         }
         
         if ($ranking > 0) {
-            $katInfo = getKategoriFromRanking($ranking);
+            $katInfo = getKategoriFromRanking($ranking, $totalPesertaTurnamen);
             $rankings[] = [
                 'ranking' => $ranking,
                 'turnamen' => $turnamen['nama_kegiatan'],
                 'kategori' => $turnamen['category_name'],
                 'tanggal' => $turnamen['created'],
-                'kategori_ranking' => $katInfo
+                'kategori_ranking' => $katInfo,
+                'total_peserta' => $totalPesertaTurnamen
             ];
             
             if ($ranking == 1) $juara1++;
@@ -569,7 +584,6 @@ while ($peserta = $result->fetch_assoc()) {
     
     $stmtRank->close();
     
-    // Ambil statistik bracket
     $bracketStats = getBracketStatistics($conn, $peserta['nama_peserta']);
     
     $kategoriDominan = getKategoriDominan($rankings);
@@ -832,7 +846,6 @@ while ($peserta = $result->fetch_assoc()) {
         <p class="mb-0">Sistem Kategorisasi Kemampuan Berdasarkan Performa Turnamen</p>
     </div>
 
-    <!-- Action Buttons -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <a href="dashboard.php" class="btn btn-info">
             <i class="fas fa-arrow-left me-2"></i>Kembali ke Dashboard
@@ -842,23 +855,22 @@ while ($peserta = $result->fetch_assoc()) {
         </a>
     </div>
 
-    <!-- Kategori Legend -->
     <div class="kategori-legend">
-        <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>Sistem Kategorisasi</h5>
+        <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>Sistem Kategorisasi (Dinamis Berdasarkan Jumlah Peserta)</h5>
         <div>
-            <span class="legend-item bg-success text-white">🏆 Kategori A: Peringkat 1-3 (Sangat Baik)</span>
-            <span class="legend-item bg-primary text-white">🥈 Kategori B: Peringkat 4-10 (Baik)</span>
-            <span class="legend-item bg-info text-white">🥉 Kategori C: Peringkat 11-20 (Cukup)</span>
-            <span class="legend-item bg-warning text-dark">📊 Kategori D: Peringkat 21-32 (Perlu Latihan)</span>
-            <span class="legend-item bg-secondary text-white">📈 Kategori E: Peringkat 33+ / Belum Bertanding (Pemula)</span>
+            <span class="legend-item bg-success text-white">🏆 Kategori A: Top 10% atau Peringkat 1-3 (Sangat Baik)</span>
+            <span class="legend-item bg-primary text-white">🥈 Kategori B: Top 11-30% atau Peringkat 4-10 (Baik)</span>
+            <span class="legend-item bg-info text-white">🥉 Kategori C: Top 31-60% atau Peringkat 11-20 (Cukup)</span>
+            <span class="legend-item bg-warning text-dark">📊 Kategori D: Top 61-80% atau Peringkat 21-32 (Perlu Latihan)</span>
+            <span class="legend-item bg-secondary text-white">📈 Kategori E: Bottom 20% / Belum Bertanding (Pemula)</span>
         </div>
         <p class="mt-3 mb-0 text-muted small">
             <i class="fas fa-lightbulb me-1"></i>
-            <strong>Catatan:</strong> Kategori dominan ditentukan berdasarkan kategori yang paling sering muncul dari seluruh turnamen yang diikuti peserta.
+            <strong>Contoh:</strong> Jika ada 7 peserta, peringkat 7 (100%) masuk Kategori E. Jika ada 50 peserta, peringkat 7 (14%) masuk Kategori B.
+            Sistem ini memastikan kategorisasi yang adil berdasarkan jumlah peserta di setiap turnamen.
         </p>
     </div>
 
-    <!-- Stats Cards -->
     <div class="row mb-4">
         <div class="col-md-2">
             <div class="stats-card kategori-a text-center">
@@ -898,7 +910,6 @@ while ($peserta = $result->fetch_assoc()) {
         </div>
     </div>
 
-    <!-- Form Filter -->
     <div class="filter-card">
         <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filter Pencarian</h5>
         <form method="get">
@@ -942,7 +953,6 @@ while ($peserta = $result->fetch_assoc()) {
         </form>
     </div>
 
-    <!-- Tabel Statistik -->
     <div class="data-table">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
@@ -1079,7 +1089,6 @@ while ($peserta = $result->fetch_assoc()) {
     <?php endif; ?>
 </div>
 
-<!-- Modal Detail -->
 <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
@@ -1090,7 +1099,6 @@ while ($peserta = $result->fetch_assoc()) {
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <!-- Informasi Peserta -->
                 <div class="card mb-3">
                     <div class="card-body">
                         <h5 class="card-title mb-3" id="modalNama"></h5>
@@ -1108,7 +1116,6 @@ while ($peserta = $result->fetch_assoc()) {
                     </div>
                 </div>
 
-                <!-- Statistik Keseluruhan -->
                 <div class="card mb-3">
                     <div class="card-header bg-primary text-white">
                         <strong><i class="fas fa-trophy me-2"></i>Statistik Keseluruhan</strong>
@@ -1146,7 +1153,6 @@ while ($peserta = $result->fetch_assoc()) {
                     </div>
                 </div>
 
-                <!-- Kategori Dominan -->
                 <div class="card mb-3">
                     <div class="card-header bg-success text-white">
                         <strong><i class="fas fa-award me-2"></i>Kategori Kemampuan</strong>
@@ -1157,7 +1163,6 @@ while ($peserta = $result->fetch_assoc()) {
                     </div>
                 </div>
 
-                <!-- Statistik Bracket/Aduan -->
                 <div class="card mb-3" id="bracketStatsCard" style="display: none;">
                     <div class="card-header bg-warning text-dark">
                         <strong><i class="fas fa-crosshairs me-2"></i>Statistik Bracket / Aduan</strong>
@@ -1199,7 +1204,6 @@ while ($peserta = $result->fetch_assoc()) {
                     </div>
                 </div>
 
-                <!-- Riwayat Bracket -->
                 <div class="card mb-3" id="bracketHistoryCard" style="display: none;">
                     <div class="card-header bg-dark text-white">
                         <strong><i class="fas fa-history me-2"></i>Riwayat Bracket / Aduan</strong>
@@ -1217,15 +1221,12 @@ while ($peserta = $result->fetch_assoc()) {
                                         <th>Bracket Size</th>
                                     </tr>
                                 </thead>
-                                <tbody id="modalBracketHistory">
-                                    <!-- Akan diisi oleh JavaScript -->
-                                </tbody>
+                                <tbody id="modalBracketHistory"></tbody>
                             </table>
                         </div>
                     </div>
                 </div>
 
-                <!-- Riwayat Turnamen -->
                 <div class="card">
                     <div class="card-header bg-info text-white">
                         <strong><i class="fas fa-history me-2"></i>Riwayat Kualifikasi / Turnament</strong>
@@ -1240,12 +1241,12 @@ while ($peserta = $result->fetch_assoc()) {
                                         <th>Kategori</th>
                                         <th>Tanggal</th>
                                         <th>Ranking</th>
+                                        <th>Total Peserta</th>
+                                        <th>Persentase</th>
                                         <th>Kategori</th>
                                     </tr>
                                 </thead>
-                                <tbody id="modalRiwayat">
-                                    <!-- Akan diisi oleh JavaScript -->
-                                </tbody>
+                                <tbody id="modalRiwayat"></tbody>
                             </table>
                         </div>
                     </div>
@@ -1263,7 +1264,6 @@ while ($peserta = $result->fetch_assoc()) {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 <script>
 function showDetail(data) {
-    // Set informasi peserta
     document.getElementById('modalNama').textContent = data.nama;
     document.getElementById('modalGender').innerHTML = `<span class="badge bg-${data.gender === 'Laki-laki' ? 'primary' : 'danger'}">${data.gender}</span>`;
     document.getElementById('modalUmur').textContent = data.umur > 0 ? data.umur + ' tahun' : '-';
@@ -1271,7 +1271,6 @@ function showDetail(data) {
     document.getElementById('modalClub').textContent = data.club || '-';
     document.getElementById('modalSekolah').textContent = data.sekolah || '-';
     
-    // Set statistik
     document.getElementById('modalTotalTurnamen').textContent = data.total_turnamen;
     document.getElementById('modalJuara1').textContent = data.juara1;
     document.getElementById('modalJuara2').textContent = data.juara2;
@@ -1279,7 +1278,6 @@ function showDetail(data) {
     document.getElementById('modalAvgRanking').textContent = data.avg_ranking > 0 ? '#' + data.avg_ranking : '-';
     document.getElementById('modalTop10').textContent = data.top10;
     
-    // Set kategori
     const katInfo = data.kategori_dominan;
     document.getElementById('modalKategori').innerHTML = `
         <span class="badge badge-kategori bg-${katInfo.color} text-white" style="font-size: 1.5rem; padding: 1rem 2rem;">
@@ -1288,7 +1286,6 @@ function showDetail(data) {
     `;
     document.getElementById('modalKategoriLabel').innerHTML = `<strong>${katInfo.label}</strong>`;
     
-    // Set statistik bracket
     const bracketStats = data.bracket_stats;
     if (bracketStats.total_bracket > 0) {
         document.getElementById('bracketStatsCard').style.display = 'block';
@@ -1303,7 +1300,6 @@ function showDetail(data) {
         const winRate = totalMatches > 0 ? ((bracketStats.bracket_matches_won / totalMatches) * 100).toFixed(1) : 0;
         document.getElementById('modalBracketWinRate').textContent = winRate + '%';
         
-        // Set riwayat bracket
         const bracketHistoryBody = document.getElementById('modalBracketHistory');
         bracketHistoryBody.innerHTML = '';
         
@@ -1342,15 +1338,15 @@ function showDetail(data) {
         document.getElementById('bracketHistoryCard').style.display = 'none';
     }
     
-    // Set riwayat turnamen
     const riwayatBody = document.getElementById('modalRiwayat');
     riwayatBody.innerHTML = '';
     
     if (data.rankings.length === 0) {
-        riwayatBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Belum ada riwayat turnamen</td></tr>';
+        riwayatBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">Belum ada riwayat turnamen</td></tr>';
     } else {
         data.rankings.forEach((r, index) => {
             const katRank = r.kategori_ranking;
+            const persentase = ((r.ranking / r.total_peserta) * 100).toFixed(1);
             const row = `
                 <tr>
                     <td>${index + 1}</td>
@@ -1359,6 +1355,12 @@ function showDetail(data) {
                     <td><small>${new Date(r.tanggal).toLocaleDateString('id-ID')}</small></td>
                     <td class="text-center">
                         <span class="badge bg-secondary">#${r.ranking}</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-dark">${r.total_peserta}</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-light text-dark">${persentase}%</span>
                     </td>
                     <td>
                         <span class="badge bg-${katRank.color} text-white">
@@ -1371,26 +1373,22 @@ function showDetail(data) {
         });
     }
     
-    // Show modal
     const modal = new bootstrap.Modal(document.getElementById('detailModal'));
     modal.show();
 }
 
-// Auto-submit form on select change
 document.querySelectorAll('select[name="gender"], select[name="kategori"]').forEach(function(select) {
     select.addEventListener('change', function() {
         this.form.submit();
     });
 });
 
-// Konfirmasi export Excel
 document.querySelector('a[href*="export=excel"]')?.addEventListener('click', function(e) {
     if (!confirm('Export data statistik ke Excel?\n\nProses ini mungkin membutuhkan waktu beberapa saat.')) {
         e.preventDefault();
     }
 });
 
-// Tooltip
 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl);
