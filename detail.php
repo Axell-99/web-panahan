@@ -4065,6 +4065,7 @@ function editScorecard() {
 }
 
 // FUNGSI EXPORT EXCEL UNTUK TABLE LIST
+// FUNGSI EXPORT EXCEL UNTUK TABLE LIST
 function exportTableToExcel() {
     const table = document.getElementById('scorecardTable');
     if (!table) return;
@@ -4108,10 +4109,10 @@ function exportTableToExcel() {
     window.URL.revokeObjectURL(url);
 }
 
-// FUNGSI EXPORT EXCEL UNTUK SCORECARD DETAIL (2 Halaman dalam 1 File)
+// FUNGSI EXPORT EXCEL UNTUK SCORECARD DETAIL (2 Sheet Terpisah)
 function exportScorecardToExcel() {
     const categoryName = document.querySelector('.category-name') ? document.querySelector('.category-name').textContent : 'Kategori';
-    const eventName = document.querySelector('.event-name') ? document.querySelector('.event-name').textContent : 'Event';
+    const eventName = document.querySelector('.event-name') ? document.querySelector('.event-name').textContent : 'REKAP TOTAL';
     
     const firstPlayerSection = document.querySelector('.player-section');
     const firstTable = firstPlayerSection ? firstPlayerSection.querySelector('.score-table') : null;
@@ -4135,107 +4136,120 @@ function exportScorecardToExcel() {
         jumlahPanah = arrowCount - 1;
     }
     
-    // ==================== Gabungan 2 Halaman dalam 1 File ====================
-    let fullHTML = `
-        <html xmlns:x="urn:schemas-microsoft-com:office:excel">
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                body { font-family: Arial, sans-serif; }
-                table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
-                th, td { border: 1px solid #000; padding: 6px; }
-                th { background-color: #000; color: white; font-weight: bold; text-align: center; }
-                td { text-align: center; }
-                h2, h3, h4 { font-family: Arial, sans-serif; font-weight: normal; }
-                .page-break { page-break-before: always; }
-            </style>
-        </head>
-        <body>
-    `;
-    
-    // ==================== Halaman 1: Rekap Total ====================
-    fullHTML += `<h2>${categoryName}</h2>`;
-    fullHTML += `<h3>${eventName}</h3>`;
-    fullHTML += `<table>`;
-    fullHTML += `<thead><tr>`;
-    fullHTML += `<th>No</th><th>Nama</th>`;
-    for (let i = 1; i <= jumlahSesi; i++) {
-        fullHTML += `<th>Rambahan ${i}</th>`;
+    // Validasi data
+    if (jumlahPanah === 0 || pesertaData.length === 0) {
+        alert('Data tidak lengkap untuk export!');
+        return;
     }
-    fullHTML += `<th>Total</th></tr></thead><tbody>`;
     
-    pesertaData.forEach((peserta, index) => {
-        const playerId = `peserta_${peserta.id}`;
-        fullHTML += `<tr>`;
-        fullHTML += `<td>${index + 1}</td>`;
-        fullHTML += `<td style="text-align: left;">${peserta.nama_peserta}</td>`;
+    // ==================== BUILD SHEET 1: REKAP TOTAL ====================
+    let sheet1HTML = '<table border="1" cellpadding="6" cellspacing="0">';
+    sheet1HTML += '<tr><td colspan="20" style="font-size: 18px; font-weight: bold; border: 1px solid #000;">' + categoryName + '</td></tr>';
+    sheet1HTML += '<tr><td colspan="20" style="font-size: 14px; border: 1px solid #000;">' + eventName + '</td></tr>';
+    sheet1HTML += '<tr>';
+    sheet1HTML += '<td style="background-color: #000; color: white; font-weight: bold; border: 1px solid #000;">No</td>';
+    sheet1HTML += '<td style="background-color: #000; color: white; font-weight: bold; border: 1px solid #000;">Nama</td>';
+    
+    for (let i = 1; i <= jumlahSesi; i++) {
+        sheet1HTML += '<td style="background-color: #000; color: white; font-weight: bold; border: 1px solid #000;">Rambalan ' + i + '</td>';
+    }
+    sheet1HTML += '<td style="background-color: #000; color: white; font-weight: bold; border: 1px solid #000;">Total</td></tr>';
+    
+    for (let index = 0; index < pesertaData.length; index++) {
+        const peserta = pesertaData[index];
+        const playerId = 'peserta_' + peserta.id;
+        sheet1HTML += '<tr>';
+        sheet1HTML += '<td style="border: 1px solid #000;">' + (index + 1) + '</td>';
+        sheet1HTML += '<td style="text-align: left; border: 1px solid #000;">' + peserta.nama_peserta + '</td>';
         
         for (let s = 1; s <= jumlahSesi; s++) {
-            const totalInput = document.getElementById(`${playerId}_total_a${s}`);
+            const totalInput = document.getElementById(playerId + '_total_a' + s);
             const value = totalInput ? (totalInput.value || '0') : '0';
-            fullHTML += `<td>${value}</td>`;
+            sheet1HTML += '<td style="border: 1px solid #000;">' + value + '</td>';
         }
         
-        const grandTotalEl = document.getElementById(`${playerId}_grand_total`);
+        const grandTotalEl = document.getElementById(playerId + '_grand_total');
         const grandTotal = grandTotalEl ? grandTotalEl.textContent.replace(' poin', '') : '0';
-        fullHTML += `<td style="font-weight: bold;">${grandTotal}</td>`;
-        fullHTML += `</tr>`;
-    });
+        sheet1HTML += '<td style="font-weight: bold; border: 1px solid #000;">' + grandTotal + '</td>';
+        sheet1HTML += '</tr>';
+    }
     
-    fullHTML += `</tbody></table>`;
+    sheet1HTML += '</table>';
     
-    // ==================== Halaman 2: Training (Page Break) ====================
-    fullHTML += `<div class="page-break"></div>`;
-    fullHTML += `<h2>${categoryName}</h2>`;
-    fullHTML += `<h3>${eventName} - Training Detail</h3>`;
+    // ==================== BUILD SHEET 2: TRAINING DETAIL ====================
+    let sheet2HTML = '<table border="1" cellpadding="6" cellspacing="0">';
+    sheet2HTML += '<tr><td colspan="20" style="font-size: 18px; font-weight: bold; border: 1px solid #000;">' + categoryName + '</td></tr>';
+    sheet2HTML += '<tr><td colspan="20" style="font-size: 14px; border: 1px solid #000;">' + eventName + ' - TRAINING</td></tr>';
+    sheet2HTML += '</table>';
     
-    pesertaData.forEach((peserta, pesertaIndex) => {
-        const playerId = `peserta_${peserta.id}`;
+    for (let pesertaIndex = 0; pesertaIndex < pesertaData.length; pesertaIndex++) {
+        const peserta = pesertaData[pesertaIndex];
+        const playerId = 'peserta_' + peserta.id;
         
-        fullHTML += `<h4 style="background-color: #ddd; padding: 8px; margin-top: 20px;">Rank#${pesertaIndex + 1} ${peserta.nama_peserta}</h4>`;
-        fullHTML += `<table>`;
-        fullHTML += `<thead><tr>`;
-        fullHTML += `<th>Rambahan</th>`;
+        sheet2HTML += '<br/><table border="1" cellpadding="6" cellspacing="0">';
+        sheet2HTML += '<tr><td colspan="20" style="background-color: #ddd; font-weight: bold; padding: 8px; border: 1px solid #000;">Rank#' + (pesertaIndex + 1) + ' ' + peserta.nama_peserta + '</td></tr>';
+        sheet2HTML += '<tr>';
+        sheet2HTML += '<td style="background-color: #000; color: white; font-weight: bold; border: 1px solid #000;">Rambalan</td>';
         
         for (let a = 1; a <= jumlahPanah; a++) {
-            fullHTML += `<th>Shot ${a}</th>`;
+            sheet2HTML += '<td style="background-color: #000; color: white; font-weight: bold; border: 1px solid #000;">Shot ' + a + '</td>';
         }
-        fullHTML += `<th>Total</th>`;
-        fullHTML += `<th>End</th>`;
-        fullHTML += `</tr></thead><tbody>`;
+        sheet2HTML += '<td style="background-color: #000; color: white; font-weight: bold; border: 1px solid #000;">Total</td>';
+        sheet2HTML += '<td style="background-color: #000; color: white; font-weight: bold; border: 1px solid #000;">End</td></tr>';
         
         for (let s = 1; s <= jumlahSesi; s++) {
-            fullHTML += `<tr>`;
-            fullHTML += `<td style="font-weight: bold;">${s}</td>`;
+            sheet2HTML += '<tr>';
+            sheet2HTML += '<td style="font-weight: bold; border: 1px solid #000;">' + s + '</td>';
             
             for (let a = 1; a <= jumlahPanah; a++) {
-                const input = document.getElementById(`${playerId}_a${a}_s${s}`);
+                const input = document.getElementById(playerId + '_a' + a + '_s' + s);
                 const value = input ? (input.value || '') : '';
-                fullHTML += `<td>${value}</td>`;
+                sheet2HTML += '<td style="border: 1px solid #000;">' + value + '</td>';
             }
             
-            const totalInput = document.getElementById(`${playerId}_total_a${s}`);
+            const totalInput = document.getElementById(playerId + '_total_a' + s);
             const totalValue = totalInput ? (totalInput.value || '0') : '0';
-            fullHTML += `<td style="font-weight: bold;">${totalValue}</td>`;
+            sheet2HTML += '<td style="font-weight: bold; border: 1px solid #000;">' + totalValue + '</td>';
             
-            const endInput = document.getElementById(`${playerId}_end_a${s}`);
+            const endInput = document.getElementById(playerId + '_end_a' + s);
             const endValue = endInput ? (endInput.value || '0') : '0';
-            fullHTML += `<td style="font-weight: bold;">${endValue}</td>`;
+            sheet2HTML += '<td style="font-weight: bold; border: 1px solid #000;">' + endValue + '</td>';
             
-            fullHTML += `</tr>`;
+            sheet2HTML += '</tr>';
         }
         
-        fullHTML += `</tbody></table>`;
-    });
+        sheet2HTML += '</table>';
+    }
     
-    fullHTML += `</body></html>`;
+    // ==================== GABUNGKAN JADI FILE EXCEL 2 SHEET ====================
+    const fullHTML = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
+    '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">' +
+    '<!--[if gte mso 9]><xml>' +
+    '<x:ExcelWorkbook>' +
+    '<x:ExcelWorksheets>' +
+    '<x:ExcelWorksheet>' +
+    '<x:Name>Rekap Total</x:Name>' +
+    '<x:WorksheetOptions><x:Panes></x:Panes></x:WorksheetOptions>' +
+    '</x:ExcelWorksheet>' +
+    '<x:ExcelWorksheet>' +
+    '<x:Name>Training Detail</x:Name>' +
+    '<x:WorksheetOptions><x:Panes></x:Panes></x:WorksheetOptions>' +
+    '</x:ExcelWorksheet>' +
+    '</x:ExcelWorksheets>' +
+    '</x:ExcelWorkbook>' +
+    '</xml><![endif]-->' +
+    '</head><body>' +
+    '<div>' + sheet1HTML + '</div>' +
+    '<br clear=all style="mso-special-character:line-break;page-break-before:always">' +
+    '<div>' + sheet2HTML + '</div>' +
+    '</body></html>';
     
-    // Download 1 File dengan 2 Halaman
+    // Download file
     const blob = new Blob([fullHTML], { type: 'application/vnd.ms-excel' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Scorecard_${categoryName}_${new Date().toISOString().split('T')[0]}.xls`;
+    a.download = 'Scorecard_' + categoryName + '_' + new Date().toISOString().split('T')[0] + '.xls';
     a.click();
     window.URL.revokeObjectURL(url);
 }
