@@ -3990,6 +3990,14 @@ function handleArrowInput(el) {
     }
 }
 
+function changePeserta() {
+    // Konfirmasi sebelum ganti peserta
+    if (confirm('Yakin ingin ganti peserta? Data yang telah diinput sudah tersimpan.')) {
+        // Refresh halaman untuk reset state
+        location.reload();
+    }
+}
+
 function hitungPerArrow(playerId, arrow, session, totalArrow, el) {
     let sessionTotal = 0;
     
