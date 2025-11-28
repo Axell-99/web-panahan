@@ -1644,6 +1644,46 @@ if (isset($_GET['action']) && $_GET['action'] == 'scorecard') {
         die("Parameter kegiatan_id dan category_id harus diisi.");
     }
 
+    // Handler untuk get scores via AJAX
+if (isset($_GET['action']) && $_GET['action'] == 'get_scores') {
+    header('Content-Type: application/json');
+    
+    $peserta_id = isset($_GET['peserta_id']) ? intval($_GET['peserta_id']) : 0;
+    $kegiatan_id = isset($_GET['kegiatan_id']) ? intval($_GET['kegiatan_id']) : 0;
+    $category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : 0;
+    $scoreboard_id = isset($_GET['scoreboard']) ? intval($_GET['scoreboard']) : 0;
+    
+    $scores = [];
+    
+    try {
+        $queryScores = "SELECT peserta_id, arrow, session, score 
+                        FROM score 
+                        WHERE kegiatan_id = ? 
+                        AND category_id = ? 
+                        AND score_board_id = ? 
+                        AND peserta_id = ?
+                        ORDER BY session ASC, arrow ASC";
+        
+        $stmtScores = $conn->prepare($queryScores);
+        $stmtScores->bind_param("iiii", $kegiatan_id, $category_id, $scoreboard_id, $peserta_id);
+        $stmtScores->execute();
+        $resultScores = $stmtScores->get_result();
+        
+        while ($row = $resultScores->fetch_assoc()) {
+            $scores[] = $row;
+        }
+        
+        $stmtScores->close();
+        
+        echo json_encode($scores);
+    } catch (Exception $e) {
+        echo json_encode(['error' => $e->getMessage()]);
+    }
+    
+    $conn->close();
+    exit;
+}
+
     $mysql_table_score_board = mysqli_query($conn, "SELECT * FROM score_boards WHERE kegiatan_id=".$kegiatan_id." AND category_id=".$category_id." ORDER BY created DESC");
     if(isset($_GET['scoreboard'])) {
         $mysql_data_score = mysqli_query($conn, "SELECT * FROM score WHERE kegiatan_id=".$kegiatan_id." AND category_id=".$category_id." AND score_board_id=".$_GET['scoreboard']." ");
@@ -3591,6 +3631,10 @@ h3 {
 
 const pesertaData = <?= json_encode($pesertaList) ?>;
 let selectedPesertaId = null;
+let saveTimeout = null;
+let inputTimeout = null;
+const SAVE_DELAY = 500; // 500ms delay sebelum save
+const INPUT_DELAY = 3000; // 3 detik untuk auto-move jika tidak ada input lagi
 
 <?php if(isset($_GET['rangking'])) { ?>
     const peserta_score = <?= json_encode($peserta_score) ?>;
@@ -3752,7 +3796,6 @@ function loadExistingScores(pesertaId, jumlahPanah) {
             <?php } ?>
         <?php }
     ?> 
-    
     console.log("✅ Data loaded for peserta:", pesertaId);
 }
 
@@ -3889,7 +3932,12 @@ function generateTableRows(playerId, jumlahSesi, jumlahPanah) {
                        <?= (isset($_GET['rangking'])) ? 'disabled' : '' ?>
                        id="${playerId}_a${arrow + 1}_s${session}"
                        placeholder=""
-                       oninput="validateArrowInput(this);hitungPerArrow('${playerId}', '${arrow + 1}', '${session}','${jumlahPanah}', this)">
+                       data-player-id="${playerId}"
+                       data-arrow="${arrow + 1}"
+                       data-session="${session}"
+                       data-total-arrow="${jumlahPanah}"
+                       oninput="handleArrowInput(this)"
+                       onkeydown="handleArrowKeydown(event, this)">
             </td>
         `).join('');
         
@@ -3918,9 +3966,34 @@ function generateTableRows(playerId, jumlahSesi, jumlahPanah) {
     return rowsHtml;
 }
 
+// Handler untuk input dengan auto-move (3 detik timeout)
+function handleArrowInput(el) {
+    const playerId = el.getAttribute('data-player-id');
+    const arrow = el.getAttribute('data-arrow');
+    const session = el.getAttribute('data-session');
+    const totalArrow = parseInt(el.getAttribute('data-total-arrow'));
+    
+    validateArrowInput(el);
+    hitungPerArrow(playerId, arrow, session, totalArrow, el);
+    
+    // Clear timeout sebelumnya
+    if (inputTimeout) {
+        clearTimeout(inputTimeout);
+    }
+    
+    // Set timeout baru untuk auto-move setelah 3 detik
+    const val = el.value.trim().toLowerCase();
+    if (val !== '') {
+        inputTimeout = setTimeout(() => {
+            moveToNextInput(el, playerId, arrow, session, totalArrow);
+        }, INPUT_DELAY);
+    }
+}
+
 function hitungPerArrow(playerId, arrow, session, totalArrow, el) {
     let sessionTotal = 0;
     
+    // Hitung total untuk session ini
     for(let a = 1; a <= totalArrow; a++) {
         const input = document.getElementById(`${playerId}_a${a}_s${session}`);
         if(input && input.value) {
@@ -3937,11 +4010,13 @@ function hitungPerArrow(playerId, arrow, session, totalArrow, el) {
         }
     }
     
+    // Update total session
     const totalInput = document.getElementById(`${playerId}_total_a${session}`);
     if(totalInput) {
         totalInput.value = sessionTotal;
     }
     
+    // Update running total (End)
     let maxSession = 20;
     let runningTotal = 0;
     
@@ -3959,67 +4034,105 @@ function hitungPerArrow(playerId, arrow, session, totalArrow, el) {
         }
     }
     
+    // Update grand total
     const grandTotalElement = document.getElementById(`${playerId}_grand_total`);
     if(grandTotalElement) {
         grandTotalElement.innerText = runningTotal + " poin";
     }
     
-    // AUTO SAVE - Menggunakan sistem yang sudah ada
+    // AUTO SAVE dengan debounce jika ada element
     if(el != null) {
-        let arr_playerID = playerId.split("_");
-        let scoreValue = el.value.trim();
+        // Clear timeout sebelumnya
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+        }
         
-        // Tampilkan indikator saving (border orange)
+        // Tampilkan indikator loading
         el.style.borderColor = '#ffa500';
         el.style.opacity = '0.7';
         
-        fetch("", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: "save_score=1" +
-                "&peserta_id=" + encodeURIComponent(arr_playerID[1]) +
-                "&arrow=" + encodeURIComponent(arrow) +
-                "&session=" + encodeURIComponent(session) + 
-                "&score=" + encodeURIComponent(scoreValue)
-        })
-        .then(response => {
-            // Coba parse sebagai JSON, jika gagal tetap lanjut
-            return response.text().then(text => {
-                try {
-                    return JSON.parse(text);
-                } catch(e) {
-                    return { status: 'success', message: text };
-                }
-            });
-        })
-        .then(data => {
-            console.log("✅ Score saved:", data);
-            
-            // Tampilkan indikator berhasil (border hijau)
-            el.style.borderColor = '#28a745';
-            el.style.opacity = '1';
-            
-            // Kembalikan style setelah 1 detik
-            setTimeout(() => {
-                validateArrowInput(el);
-            }, 1000);
-        })
-        .catch(err => {
-            console.error("❌ Save error:", err);
-            
-            // Tampilkan indikator error (border merah)
-            el.style.borderColor = '#dc3545';
-            el.style.opacity = '1';
-            
-            // Kembalikan style setelah 2 detik
-            setTimeout(() => {
-                validateArrowInput(el);
-            }, 2000);
-        });
+        // Set timeout baru untuk save
+        saveTimeout = setTimeout(() => {
+            saveScoreToDatabase(playerId, arrow, session, el);
+        }, SAVE_DELAY);
     }
+    
     return 0;
+}
+
+// Fungsi terpisah untuk save ke database
+function saveScoreToDatabase(playerId, arrow, session, el) {
+    let arr_playerID = playerId.split("_");
+    let scoreValue = el.value.trim();
+    
+    fetch("", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "save_score=1" +
+            "&peserta_id=" + encodeURIComponent(arr_playerID[1]) +
+            "&arrow=" + encodeURIComponent(arrow) +
+            "&session=" + encodeURIComponent(session) + 
+            "&score=" + encodeURIComponent(scoreValue)
+    })
+    .then(response => response.text())
+    .then(text => {
+        try {
+            return JSON.parse(text);
+        } catch(e) {
+            return { status: 'success', message: text };
+        }
+    })
+    .then(data => {
+        console.log("✅ Score saved:", data);
+        
+        // Tampilkan indikator berhasil
+        el.style.borderColor = '#28a745';
+        el.style.opacity = '1';
+        
+        // Kembalikan style setelah 1 detik
+        setTimeout(() => {
+            validateArrowInput(el);
+        }, 1000);
+    })
+    .catch(err => {
+        console.error("❌ Save error:", err);
+        
+        // Tampilkan indikator error
+        el.style.borderColor = '#dc3545';
+        el.style.opacity = '1';
+        
+        // Kembalikan style setelah 2 detik
+        setTimeout(() => {
+            validateArrowInput(el);
+        }, 2000);
+    });
+}
+
+// Fungsi untuk auto-move ke input berikutnya
+function moveToNextInput(currentElement, playerId, currentArrow, currentSession, totalArrow) {
+    // Cari input berikutnya
+    let nextArrow = parseInt(currentArrow);
+    let nextSession = parseInt(currentSession);
+    
+    if (nextArrow < totalArrow) {
+        // Pindah ke arrow berikutnya di session yang sama
+        nextArrow++;
+    } else {
+        // Pindah ke arrow pertama di session berikutnya
+        nextArrow = 1;
+        nextSession++;
+    }
+    
+    const nextInput = document.getElementById(`${playerId}_a${nextArrow}_s${nextSession}`);
+    
+    if (nextInput && !nextInput.disabled) {
+        setTimeout(() => {
+            nextInput.focus();
+            nextInput.select();
+        }, 100);
+    }
 }
 
 function validateArrowInput(el) {

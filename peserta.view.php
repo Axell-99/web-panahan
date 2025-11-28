@@ -332,7 +332,7 @@ $uniqueCount = count($pesertaGrouped);
             --dark-color: #1f2937;
             --light-gray: #f8fafc;
             --medium-gray: #e2e8f0;
-            --text-dark: #374151;
+            --text-dark: #122036ff;
             --text-light: #6b7280;
         }
 
