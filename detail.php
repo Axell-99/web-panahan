@@ -3634,7 +3634,7 @@ let selectedPesertaId = null;
 let saveTimeout = null;
 let inputTimeout = null;
 const SAVE_DELAY = 500; // 500ms delay sebelum save
-const INPUT_DELAY = 3000; // 3 detik untuk auto-move jika tidak ada input lagi
+const INPUT_DELAY = 500;
 
 <?php if(isset($_GET['rangking'])) { ?>
     const peserta_score = <?= json_encode($peserta_score) ?>;
