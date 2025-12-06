@@ -3,44 +3,30 @@ include 'panggil.php';
 include 'check_access.php';
 requireAdmin();
 
-// Fungsi untuk menentukan kategori berdasarkan ranking dan total peserta
 function getKategoriFromRanking($ranking, $totalPeserta) {
-    // Jika hanya 1 peserta, otomatis kategori A
     if ($totalPeserta <= 1) {
         return ['kategori' => 'A', 'label' => 'Sangat Baik', 'color' => 'success', 'icon' => '🏆'];
     }
     
-    // Hitung persentase ranking (ranking 1 dari 10 = 10%, ranking 10 dari 10 = 100%)
     $persentase = ($ranking / $totalPeserta) * 100;
     
-    // Kategori A: Top 10% DAN ranking 1-3 (keduanya harus terpenuhi untuk turnamen kecil)
-    // Contoh: ranking 1-3 dari 30+ peserta, atau ranking 1 dari 10 peserta
     if ($ranking <= 3 && $persentase <= 30) {
         return ['kategori' => 'A', 'label' => 'Sangat Baik', 'color' => 'success', 'icon' => '🏆'];
     }
-    // Kategori B: Top 31-40% DAN ranking 4-10
-    // Contoh: ranking 4-10 dari 30+ peserta, atau ranking 2-4 dari 10 peserta
     elseif ($ranking <= 10 && $persentase <= 40) {
         return ['kategori' => 'B', 'label' => 'Baik', 'color' => 'primary', 'icon' => '🥈'];
     }
-    // Kategori C: Top 41-60%
-    // Contoh: ranking 5-6 dari 10 peserta, atau ranking 11-20 dari 40 peserta
     elseif ($persentase <= 60) {
         return ['kategori' => 'C', 'label' => 'Cukup', 'color' => 'info', 'icon' => '🥉'];
     }
-    // Kategori D: Top 61-80%
-    // Contoh: ranking 7-8 dari 10 peserta
     elseif ($persentase <= 80) {
         return ['kategori' => 'D', 'label' => 'Perlu Latihan', 'color' => 'warning', 'icon' => '📊'];
     }
-    // Kategori E: Bottom 20% (lebih dari 80%)
-    // Contoh: ranking 9-10 dari 10 peserta, ranking 10 dari 11 peserta
     else {
         return ['kategori' => 'E', 'label' => 'Pemula', 'color' => 'secondary', 'icon' => '📈'];
     }
 }
 
-// Fungsi untuk menghitung kategori dominan
 function getKategoriDominan($rankings) {
     if (empty($rankings)) {
         return ['kategori' => 'E', 'label' => 'Pemula (Belum Pernah Bertanding)', 'color' => 'secondary', 'icon' => '📈'];
@@ -69,7 +55,6 @@ function getKategoriDominan($rankings) {
     }
 }
 
-// Fungsi untuk mendapatkan statistik bracket/aduan peserta
 function getBracketStatistics($conn, $peserta_nama) {
     $stats = [
         'total_bracket' => 0,
@@ -81,7 +66,6 @@ function getBracketStatistics($conn, $peserta_nama) {
         'bracket_history' => []
     ];
     
-    // Hitung jumlah sebagai champion
     $queryChampion = "SELECT COUNT(*) as total FROM bracket_champions bc
                       INNER JOIN peserta p ON bc.champion_id = p.id
                       WHERE p.nama_peserta = ?";
@@ -94,7 +78,6 @@ function getBracketStatistics($conn, $peserta_nama) {
     }
     $stmtChampion->close();
     
-    // Hitung jumlah sebagai runner up
     $queryRunnerUp = "SELECT COUNT(*) as total FROM bracket_champions bc
                       INNER JOIN peserta p ON bc.runner_up_id = p.id
                       WHERE p.nama_peserta = ?";
@@ -107,7 +90,6 @@ function getBracketStatistics($conn, $peserta_nama) {
     }
     $stmtRunnerUp->close();
     
-    // Hitung jumlah sebagai third place
     $queryThird = "SELECT COUNT(*) as total FROM bracket_champions bc
                    INNER JOIN peserta p ON bc.third_place_id = p.id
                    WHERE p.nama_peserta = ?";
@@ -120,7 +102,6 @@ function getBracketStatistics($conn, $peserta_nama) {
     }
     $stmtThird->close();
     
-    // Hitung matches won
     $queryWon = "SELECT COUNT(*) as total FROM bracket_matches bm
                  INNER JOIN peserta p ON bm.winner_id = p.id
                  WHERE p.nama_peserta = ?";
@@ -133,7 +114,6 @@ function getBracketStatistics($conn, $peserta_nama) {
     }
     $stmtWon->close();
     
-    // Hitung matches lost
     $queryLost = "SELECT COUNT(*) as total FROM bracket_matches bm
                   INNER JOIN peserta p ON bm.loser_id = p.id
                   WHERE p.nama_peserta = ?";
@@ -146,7 +126,6 @@ function getBracketStatistics($conn, $peserta_nama) {
     }
     $stmtLost->close();
     
-    // Ambil riwayat bracket
     $queryHistory = "
         SELECT DISTINCT
             bc.kegiatan_id,
@@ -190,7 +169,13 @@ function getBracketStatistics($conn, $peserta_nama) {
     return $stats;
 }
 
-// Handle export to Excel
+$queryClubs = "SELECT DISTINCT nama_club FROM peserta WHERE nama_club IS NOT NULL AND nama_club != '' ORDER BY nama_club ASC";
+$resultClubs = $conn->query($queryClubs);
+$clubs = [];
+while ($row = $resultClubs->fetch_assoc()) {
+    $clubs[] = $row['nama_club'];
+}
+
 if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     header("Content-Type: application/vnd.ms-excel");
     header("Content-Disposition: attachment; filename=statistik_peserta_" . date('Y-m-d') . ".xls");
@@ -392,11 +377,11 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     exit();
 }
 
-// Ambil filter
 $gender = $_GET['gender'] ?? '';
 $nama = $_GET['nama'] ?? '';
 $club = $_GET['club'] ?? '';
 $kategori_filter = $_GET['kategori'] ?? '';
+$sortByKategori = isset($_GET['sortByKategori']) && $_GET['sortByKategori'] == '1';
 
 $query = "SELECT 
             MIN(p.id) as id,
@@ -425,8 +410,8 @@ if (!empty($nama)) {
 }
 
 if (!empty($club)) {
-    $query .= " AND p.nama_club LIKE ?";
-    $params[] = "%$club%";
+    $query .= " AND p.nama_club = ?";
+    $params[] = $club;
     $types .= "s";
 }
 
@@ -442,7 +427,6 @@ if (!empty($params)) {
     $result = $conn->query($query);
 }
 
-// Proses data peserta dengan ranking
 $pesertaData = [];
 $totalKategoriA = 0;
 $totalKategoriB = 0;
@@ -633,6 +617,29 @@ while ($peserta = $result->fetch_assoc()) {
         case 'D': $totalKategoriD++; break;
         case 'E': $totalKategoriE++; break;
     }
+}
+
+// Sorting logic
+if ($sortByKategori) {
+    usort($pesertaData, function($a, $b) {
+        $kategoriOrder = ['A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'E' => 5];
+        $aKat = $kategoriOrder[$a['kategori_dominan']['kategori']];
+        $bKat = $kategoriOrder[$b['kategori_dominan']['kategori']];
+        
+        if ($aKat != $bKat) {
+            return $aKat - $bKat;
+        }
+        
+        if ($a['avg_ranking'] != $b['avg_ranking']) {
+            return $a['avg_ranking'] - $b['avg_ranking'];
+        }
+        
+        return $b['total_turnamen'] - $a['total_turnamen'];
+    });
+} else {
+    usort($pesertaData, function($a, $b) {
+        return strcmp($a['nama'], $b['nama']);
+    });
 }
 ?>
 <!DOCTYPE html>
@@ -855,9 +862,11 @@ while ($peserta = $result->fetch_assoc()) {
         <a href="dashboard.php" class="btn btn-info">
             <i class="fas fa-arrow-left me-2"></i>Kembali ke Dashboard
         </a>
-        <a href="?export=excel<?= !empty($gender) ? '&gender='.$gender : '' ?><?= !empty($nama) ? '&nama='.$nama : '' ?><?= !empty($club) ? '&club='.$club : '' ?><?= !empty($kategori_filter) ? '&kategori='.$kategori_filter : '' ?>" class="btn btn-success">
-            <i class="fas fa-file-excel me-2"></i>Export Excel
-        </a>
+        <div>
+            <a href="?export=excel<?= !empty($gender) ? '&gender='.$gender : '' ?><?= !empty($nama) ? '&nama='.$nama : '' ?><?= !empty($club) ? '&club='.$club : '' ?><?= !empty($kategori_filter) ? '&kategori='.$kategori_filter : '' ?>" class="btn btn-success">
+                <i class="fas fa-file-excel me-2"></i>Export Excel
+            </a>
+        </div>
     </div>
 
     <div class="kategori-legend">
@@ -921,6 +930,9 @@ while ($peserta = $result->fetch_assoc()) {
     <div class="filter-card">
         <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filter Pencarian</h5>
         <form method="get">
+            <?php if ($sortByKategori): ?>
+                <input type="hidden" name="sortByKategori" value="1">
+            <?php endif; ?>
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label">Nama Peserta</label>
@@ -936,7 +948,14 @@ while ($peserta = $result->fetch_assoc()) {
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Club</label>
-                    <input type="text" class="form-control" name="club" value="<?= htmlspecialchars($club) ?>" placeholder="Nama club...">
+                    <select class="form-select" name="club">
+                        <option value="">Semua Club</option>
+                        <?php foreach ($clubs as $clubName): ?>
+                            <option value="<?= htmlspecialchars($clubName) ?>" <?= $club == $clubName ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($clubName) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Kategori</label>
@@ -950,13 +969,26 @@ while ($peserta = $result->fetch_assoc()) {
                     </select>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary me-2">
-                        <i class="fas fa-search me-2"></i>Cari
-                    </button>
-                    <a href="?" class="btn btn-outline-secondary">
-                        <i class="fas fa-redo me-2"></i>Reset
-                    </a>
-                </div>
+    <button type="submit" class="btn btn-primary me-2">
+        <i class="fas fa-search me-2"></i>Cari
+    </button>
+    <a href="?" class="btn btn-outline-secondary me-2">
+        <i class="fas fa-redo me-2"></i>Reset
+    </a>
+    <?php if ($sortByKategori): ?>
+        <a href="?<?= !empty($gender) ? 'gender='.$gender.'&' : '' ?><?= !empty($nama) ? 'nama='.$nama.'&' : '' ?><?= !empty($club) ? 'club='.$club.'&' : '' ?><?= !empty($kategori_filter) ? 'kategori='.$kategori_filter : '' ?>" 
+           class="btn btn-warning" 
+           title="Kembali ke urutan A-Z">
+            <i class="fas fa-sort-alpha-down"></i>
+        </a>
+    <?php else: ?>
+        <a href="?sortByKategori=1<?= !empty($gender) ? '&gender='.$gender : '' ?><?= !empty($nama) ? '&nama='.$nama : '' ?><?= !empty($club) ? '&club='.$club : '' ?><?= !empty($kategori_filter) ? '&kategori='.$kategori_filter : '' ?>" 
+           class="btn btn-primary" 
+           title="Rekap berdasarkan kategori A-E">
+            <i class="fas fa-layer-group"></i>
+        </a>
+    <?php endif; ?>
+</div>
             </div>
         </form>
     </div>
@@ -1092,19 +1124,21 @@ while ($peserta = $result->fetch_assoc()) {
     
     <?php if (!empty($pesertaData)): ?>
         <div class="mt-3 text-end">
-            <small class="text-muted">Menampilkan <?= count($pesertaData) ?> peserta</small>
+            <small class="text-muted">Menampilkan <?= count($pesertaData) ?> peserta
+            <?php if ($sortByKategori): ?>
+                <span class="badge bg-primary ms-2">Diurutkan berdasarkan Kategori A-E</span>
+            <?php endif; ?>
+            </small>
         </div>
     <?php endif; ?>
 </div>
 
-<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+<div class="modal fade" id="detailModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="detailModalLabel">
-                    <i class="fas fa-chart-bar me-2"></i>Detail Performa Peserta
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><i class="fas fa-chart-bar me-2"></i>Detail Performa Peserta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="card mb-3">
@@ -1250,7 +1284,6 @@ while ($peserta = $result->fetch_assoc()) {
                                         <th>Tanggal</th>
                                         <th>Ranking</th>
                                         <th>Total Peserta</th>
-                                        <!-- <th>Persentase</th> -->
                                         <th>Kategori</th>
                                     </tr>
                                 </thead>
@@ -1350,11 +1383,10 @@ function showDetail(data) {
     riwayatBody.innerHTML = '';
     
     if (data.rankings.length === 0) {
-        riwayatBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">Belum ada riwayat turnamen</td></tr>';
+        riwayatBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Belum ada riwayat turnamen</td></tr>';
     } else {
         data.rankings.forEach((r, index) => {
             const katRank = r.kategori_ranking;
-            // const persentase = ((r.ranking / r.total_peserta) * 100).toFixed(1);
             const row = `
                 <tr>
                     <td>${index + 1}</td>
@@ -1367,7 +1399,6 @@ function showDetail(data) {
                     <td class="text-center">
                         <span class="badge bg-dark">${r.total_peserta}</span>
                     </td>
-                    
                     <td>
                         <span class="badge bg-${katRank.color} text-white">
                             ${katRank.icon} ${katRank.kategori}
